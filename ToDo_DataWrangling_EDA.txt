@@ -1,0 +1,49 @@
+ToDo list:
+
+
+Data wrangling:
+
+The first part is dedicated to data wrangling which includes data cleaning and variable preparation. First of all we will check basic information, such
+as missing values (in the form of NaN, NA and Null), duplicates, number of unique values and determine which columns can be removed and which can be modified or created. After, we will focus our efforts on determining outliers.
+- Print summary
+- Check for missing values
+	- If there are missing values, don't deal with them now, but after addressing possible outliers.
+- Check duplicates - probably none
+- (Not mandatory) Print number of unique values per column - Most probably we don't need this, because every row would be unique
+- Convert to factors variables that are categorical. This will help with ordering, and checking for wrong values.
+	- To create a factor we start by creating a list of the valid levels. For this we use the documentation for the columns (what is the range of possible values).
+- Omit certain features and Combine multiple features into one in order to make the analysis simpler
+	- Do analysis first and if some features aren't really informative exclude them from the final df
+- Recoding variables
+	- Check summary for variables. If the distribution looks stupid, do a custom recoding. (e.g.: three categories with 50-49-1% we can remap to two categories)
+- Create a binary variable (or more of them) that will be used for classification. 
+- Check for outliers (only for continuous variables possible)
+	- Boxplots
+	- Count number of outliers per column
+	- Histograms - do transformations (log) if the distribution is weird (long tails for example)
+	- How do we deal with the outliers?
+		- Replace with mean / Remove entries
+	 - It is generally recommended to detect and address outliers before imputing missing values
+	
+
+Exploratory Data Analysis
+- Check the histogram of the continuous variables. If it's skewed, apply log transform and check the QQ plot.
+- Plot density histograms
+	- Separate the categories for a continuous variable (e.g.: Life expectancy/BMI for developing/developed country)
+- Plot proportion for categorical variables - bar graphs for year, Status
+- Compare the mean (and median) Life expectancy for developing/developed countries
+	- Boxplot of Life expectancy grouped by Status
+- Top/Worst 10 countries analysis (based on Life expectancy) - check if we can spot some patterns. 
+- Life expectancy throught the years
+	- Highlight the best year
+	- Check for some trends, like drop in the curve.
+		- Google what happened that caused the decrease
+- Life expectancy in the world - show a world map with heatmap
+- Analysis of continuous variables -  this section will be heavy on scatter plots, but their analysis is fundamental to find important relations in the continuous variables.
+	- Both variables for the scatter plot are numerical
+	- (Not mandatory) Add regression line if the scatter plot has linear shape
+- Correlation analysis
+
+
+Relevant questions
+- For how many countries the Life expectancy is pretty consistent (variance < threshold)? For how many of them it increases/decreases drastically (max - min < threshold)?
