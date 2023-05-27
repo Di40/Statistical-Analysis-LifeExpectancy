@@ -1,6 +1,6 @@
 ---
 title: "Life Expectancy Statistical Analysis"
-author: "Marija Cveevska"
+author: "Marija Cveevska, Dejan Dichoski"
 date: "2023-05-24"
 output: 
   html_document:
@@ -15,21 +15,23 @@ knitr::opts_chunk$set(echo = TRUE)
 options(warn=-1)
 ```
 
-```{r,results="hide", message = FALSE}
+```{r, results="hide", message = FALSE, echo=FALSE}
 library(ggplot2)
 library(GGally)
 library(ggcorrplot)
 library(plotly)
-library(ggplot2)
 library(tidyverse)
 library(cowplot)
 library(psych)
 library(lattice)
 library(xtable)
-library(plyr); library(dplyr)
+library(plyr)
+library(dplyr)
 library(gridExtra)
 library(WVPlots)
 library(rcompanion)
+library(knitr)
+library(DescTools)
 ```
 ## Why is it important to have knowledge about life expectancy?
 
@@ -49,88 +51,100 @@ Bank Loans:
 
 ## About the Dataset
 
-The dataset related to life expectancy for 193 countries has been collected from WHO data repository website and its corresponding economic data was collected from United Nation website. Among all categories of health-related factors only those critical factors were chosen which are more representative.
+The aim of this work is to analyze a dataset related to life expectancy. It contains data for 193 countries, in a span of 15 years, which has been collected from the WHO data repository website and its corresponding economic data was collected from United Nation website. We obtained this dataset from Kaggle and it is publicly available for educational purposes. (TODO: Fix fillowing sentence when done with the analysis) The analysis will consist of data cleaning, exploratory data analysis (EDA), a simple case of linear regression, a more complete study of multiple linear regression and finally a binary classification problem.
 
-We obtained this dataset from Kaggle and It is publicly available for educational purposes. 
-In this project we have considered data from year 2000-2015 for 193 countries for further analysis.
+We start our project by loading the dataset from the local drive to a dataframe.
 
-## Data Wrangling 
-
-There are 22 columns in our dataset. These columns’s label are listed below.
-
-***Country*** - Country <br>
-***Year*** - data is collected from 2000 - 2015 years<br>
-***Status*** - Developed or Developing status<br>
-***Life expectancy*** - Life Expectancy in age<br>
-***Adult Mortality*** - Adult Mortality Rates of both sexes (probability of dying between 15 and 60 years per 1000 population)<br>
-***infant deaths*** - Number of Infant Deaths per 1000 population<br>
-***Alcohol*** - Alcohol, recorded per capita (15+) consumption (in litres of pure alcohol)<br>
-***percentage expenditure*** - Expenditure on health as a percentage of Gross Domestic Product per capita(%)<br>
-***Hepatitis B*** - Hepatitis B (HepB) immunization coverage among 1-year-olds (%)<br>
-***Measles*** - number of reported cases per 1000 population<br>
-***BMI*** - Average Body Mass Index of entire population<br>
-***under-five deaths*** - Number of under-five deaths per 1000 population<br>
-***Polio*** - (Pol3) immunization coverage among 1-year-olds (%)<br>
-***Total expenditure*** - General government expenditure on health as a percentage of total government expenditure (%)<br>
-***Diphtheria*** - Diphtheria tetanus toxoid and pertussis (DTP3) immunization coverage among 1-year-olds (%)<br>
-***HIV/AIDS*** - Deaths per 1 000 live births HIV/AIDS (0-4 years)<br>
-***GDP*** - Gross Domestic Product per capita (in USD)<br>
-***Population*** - Population of the country<br>
-***thinness 1-19 years*** - Prevalence of thinness among children and adolescents for Age 10 to 19 (% )<br>
-***thinness 5-9 years*** - Prevalence of thinness among children for Age 5 to 9(%)<br>
-***Income composition of resources*** - Human Development Index in terms of income composition of resources (index ranging from 0 to 1)<br>
-***Schooling*** - Number of years of Schooling(years)<br>
+```{r, echo=FALSE}
+tryCatch({
+  LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
+  print("Dataset loaded.")
+}, error = function(e) {
+  print(paste("An error occurred while loading the dataset:", conditionMessage(e)))
+})
+cat(paste("Number of rows: ", nrow(LifeExp), "| Number of columns: ", ncol(LifeExp)))
+```
+Let's take a look at the first 5 rows:
 
 ```{r}
-LifeExp <- read.csv("C:/Users/marij/Desktop/Life Expectancy STats/LifeExpectancyData.csv")
 head(LifeExp, 5)
 ```
-The dataset contains 2938 rows and 22 columns
 
-```{r}
-dim(LifeExp)
+In order to perform a successful analysis, it is important to properly understand the variables presented in the data. As we saw above, the dataset contains 22 variables (features). Let's start by answering the following question:\
+- What does each variable mean and what type of variable is it (Nominal/Ordinal/Interval/Ratio)?
+
+```{r, echo=FALSE}
+
+# Define column names and descriptions
+column_names <- c("Country", "Year", "Status", "Life expectancy", "Adult Mortality", "Infant deaths", 
+                  "Alcohol", "Percentage expenditure", "Hepatitis B", "Measles", "BMI", "Under-five deaths",
+                  "Polio", "Total expenditure", "Diphtheria", "HIV/AIDS", "GDP", "Population",
+                  "Thinness 1-19 years", "Thinness 5-9 years", "Income composition of resources",
+                  "Schooling")
+column_types <- c("Nominal", "Ordinal", "Nominal", rep("Ratio", length(column_names)-3))
+
+
+column_descriptions <- c("Country",
+                         "Data is collected from 2000 - 2015 years",
+                         "Developed or Developing status",
+                         "Life Expectancy in age",
+                         "Adult Mortality Rates of both sexes (probability of dying between 15 and 60 years per 1000 population)",
+                         "Number of Infant Deaths per 1000 population",
+                         "Alcohol, recorded per capita (15+) consumption (in litres of pure alcohol)",
+                         "Expenditure on health as a percentage of Gross Domestic Product per capita(%)",
+                         "Hepatitis B (HepB) immunization coverage among 1-year-olds (%)",
+                         "Number of reported cases of Measles per 1000 population",
+                         "Average Body Mass Index of the entire population",
+                         "Number of under-five deaths per 1000 population",
+                         "Polio (Pol3) immunization coverage among 1-year-olds (%)",
+                         "General government expenditure on health as a percentage of total government expenditure (%)",
+                         "Diphtheria tetanus toxoid and pertussis (DTP3) immunization coverage among 1-year-olds (%)",
+                         "Deaths per 1 000 live births due to HIV/AIDS (0-4 years)",
+                         "Gross Domestic Product per capita (in USD)",
+                         "Population of the country",
+                         "Prevalence of thinness among children and adolescents for Age 10 to 19 (%)",
+                         "Prevalence of thinness among children for Age 5 to 9 (%)",
+                         "Human Development Index in terms of income composition of resources (index ranging from 0 to 1)",
+                         "Number of years of Schooling (years)")
+
+
+# Create a data frame with column names and descriptions
+data_info <- data.frame(Column = column_names, Type = column_types, Description = column_descriptions)
+
+# Render the data frame as a formatted table
+knitr::kable(data_info, align = "l", col.names = c("Column Name", "Type", "Description"))
+
 ```
-To understand more about the dataset we are going to take a look at its structure:
+
+Let's check whether the columns of our dataframe correspond to the described types above. To do this, we use the command str() to look at the dataset structure:
+
 ```{r}
 str(LifeExp)
 ```
-```{r}
-summary(LifeExp)
-```
-### Data Cleaning
+The shown result corresponds to the given dataset description, which means that there were no problems when loading the data. So, we can begin the first part of our statistical analysis, which is data preparation (aka cleaning, wrangling).
 
-#### Dealing with NA values
+## Data Wrangling 
 
-```{r}
-colSums(is.na(LifeExp))
-```
-These results indicate that most of the missing data is for population, Hepatitis B and GDP.
-In order to avoid errors we will replace the missing values with the mean.
+In this section we will carry out the cleaning of the data. First of all we will check whether some of the variables have missing values (in the form of NaN, NA and Null). If so, we will try to answer: what should be done about them? We will determine whether some columns shall be removed and whether some can be modified or created. After, we will focus our efforts on determining outliers and ways to deal with them.
+
+Before we proceed with the missing values analysis, let's perform a couple of quick fixes to our data:\
+- Rename the variable thinness..1.19.years to be more representative of its true meaning ("Prevalence of thinness among children and adolescents for Age 10 to 19 (%)").\
+- Convert the character columns to factor columns (ToDo: Explain why this is useful)
 
 ```{r}
-LifeExp_num <- select(LifeExp,-c(1,2,3))
-colMeans(LifeExp_num, na.rm = TRUE)
 
+colnames(LifeExp)[colnames(LifeExp) == "thinness..1.19.years"] <- "thinness.10.19.years"
+
+# Convert a character column to a factor column
+LifeExp$Year    <- factor(LifeExp$Year)
+LifeExp$Country <- factor(LifeExp$Country)
+LifeExp$Status  <- factor(LifeExp$Status)
+
+str(LifeExp)
 ```
+### Checking unique values
 
-```{r}
-for(i in 4:ncol(LifeExp)) {
-  LifeExp[ , i][is.na(LifeExp[ , i])] <- mean(LifeExp[ , i], na.rm=TRUE)
-}
-summary(LifeExp) 
-```
-```{r}
-colSums(is.na(LifeExp))
-```
-
-```{r}
-dim(LifeExp)
-```
-
-#### Checking unique values
-
-Let's have a look at the unique values in our dataset.
-
+Let's have a look at the unique values in our dataset.\
 We do this just to double check that number of unique values corresponds to the dataset's description.
 
 ```{r}
@@ -138,26 +152,311 @@ We do this just to double check that number of unique values corresponds to the 
 num_unique_values <- sapply(LifeExp, function(x) length(unique(x)))
 
 # Print the number of unique values for each column
-for (i in 1:ncol(LifeExp)) {
+for (i in 1 : ncol(LifeExp)) {
   column_name <- names(LifeExp)[i]
   num_unique <- num_unique_values[i]
-  
-  cat("Number of unique values for column '", column_name, "': ", num_unique, "\n")
+  cat(column_name, ": ", num_unique, "\n")
 }
 ```
+
+
+### Missing Values
+
+To address missing values, the following steps can be taken:\
+1. Detection of missing values:
+  - Identify null values in the dataset.
+  - Consider if there are any alternative representations of missing values, such as zero values.
+2. Dealing with missing values:
+  - Decide whether to fill the null values through imputation or interpolation techniques.
+  - Alternatively, consider removing the null values from the dataset if appropriate.
+
+Lets first check the existence of explicit null values.
+
+```{r}
+is.null(LifeExp)
+sum(is.na(LifeExp))
+sum(is.nan(as.matrix(LifeExp)))
+```
+
+```{r}
+colSums(is.na(LifeExp))
+```
+
+As we can see most of the columns contain missing values (NA), resulting in a total of 2563 missing entries. Before we decide how to deal with them, let's check whether there are some wrong entries, which we call inexplicit nulls. The simplest and fastest way to check for such entries would be to do a quick summary() and look at each variable separately and see if the values make sense based on their descriptions.
+
+```{r}
+summary(LifeExp)
+```
+(ToDo: Rewrite the interpretations if needed)
+
+Judging by the summary for the variables, it seems that some values in the dataset may be inaccurate or require further investigation. Here's a breakdown of the potential issues:
+
+1. Adult mortality of 1: It's highly unlikely for adult mortality to be as low as 1. This could indicate a measurement error. We can set a certain threshold and consider all the values below it as null.
+
+2. Infant deaths of 0 and 1800: Having zero infant deaths per 1000 births is implausible, so it's reasonable to consider such values as null. On the other hand, 1800 infant deaths may be an outlier but could be possible in certain circumstances, such as high birthrates and a relatively small population. Further analysis is needed to determine if it's an outlier or an accurate measurement.
+
+3. BMI of 1 and 87.3: These values seem unrealistic, as it would indicate extreme underweight or obesity across an entire population. These values may be inaccurate or outliers. Considering the nature of this variable, it might be worth investigating further or even disregarding if the data quality is questionable.
+
+4. Under Five Deaths at zero: Similar to infant deaths, reporting zero deaths for children under five is highly unlikely. It's reasonable to treat such values as null or investigate the data source for clarification.
+
+5. GDP per capita of 1.68: Extremely low GDP values like 1.68 (in USD) may be implausible. These low values could be outliers or inaccuracies. Further analysis and comparison with reliable sources could help determine their validity.
+
+6. Population of 34: A population value of 34 for an entire country appears questionable. It's likely an outlier or an error in measurement that requires verification or further investigation.
+
+It's important to note that these are assumptions based on the provided summary statistics and our domain knowledge. More thorough analysis may be necessary to make accurate conclusions about the data's quality and identify the best approach for handling these inconsistencies.
+
+To gain a deeper understanding of these values, let's visualize them using boxplots for each variable.
+
+```{r}
+par(mfrow = c(2, 3))
+variables <- c('Adult.Mortality', 'infant.deaths', 'BMI', 'under.five.deaths', 'GDP', 'Population')
+
+for (i in 1:length(variables)) {
+  boxplot(LifeExp[, variables[i]], main = variables[i])
+}
+```
+
+(ToDo: Rewrite the following part if needed)
+
+After examining the mentioned values, it appears that some of them could potentially be outliers, while others are most likely errors. To address these inconsistencies, the following modifications will be made, considering that the values are implausible:
+
+- Adult mortality rates lower than the 5th percentile will be treated as null.\
+- Infant deaths of 0 will be considered null.\
+- BMIs below 10 and above 50 will be considered null.\
+- Under Five deaths of 0 will be considered null.\
+By making these adjustments, we can handle the values that do not align with reasonable expectations.
+
+```{r}
+num_na_before <- sum(colSums(is.na(LifeExp)))
+mort_5_percentile <- quantile(LifeExp$Adult.Mortality[!is.na(LifeExp$Adult.Mortality)], probs = 0.05)
+LifeExp$Adult.Mortality <- ifelse(LifeExp$Adult.Mortality < mort_5_percentile, NA, LifeExp$Adult.Mortality)
+LifeExp$infant.deaths <- ifelse(LifeExp$infant.deaths == 0, NA, LifeExp$infant.deaths)
+LifeExp$BMI <- ifelse(LifeExp$BMI < 10 | LifeExp$BMI > 50, NA, LifeExp$BMI)
+LifeExp$under.five.deaths <- ifelse(LifeExp$under.five.deaths == 0, NA, LifeExp$under.five.deaths)
+```
+
+```{r}
+cat(num_na_before, sum(colSums(is.na(LifeExp))))
+```
+As we can see, we increased the number of missing values from 2563 to 5763. There seems to be a significant number of null values in the dataset. For now, it might be helpful to analyze separately just the columns that contain nulls to gain more insights. The following function aims to achieve this. It identifies and presents the columns that have explicit null values, tracks the total count of such columns along with their positions in the dataframe, and provides the count and percentage of nulls for each specified column.
+
+```{r}
+nulls_breakdown <- function(df) {
+  df_cols <- colnames(df)
+  cols_total_count <- length(df_cols)
+  cols_count <- 0
+  for (loc in 1:length(df_cols)) {
+    col <- df_cols[loc]
+    null_count <- sum(is.na(df[[col]]))
+    total_count <- length(df[[col]])
+    percent_null <- round(null_count / total_count * 100, 2)
+    if (null_count > 0) {
+      cols_count <- cols_count + 1
+      cat("[", loc - 1, "] ", col, " has ", null_count, " null values: ", percent_null, "% null\n", sep = "")
+    }
+  }
+  cols_percent_null <- round(cols_count / cols_total_count * 100, 2)
+  cat("Out of ", cols_total_count, " total columns, ", cols_count, " contain null values; ", cols_percent_null, "% columns contain null values.\n", sep = "")
+}
+
+nulls_breakdown(LifeExp)
+```
+#### Dealing with missing values
+
+Given that approximately half of the values in the BMI variable are null, we decided that it would be the best to exclude this variable from the analysis.
+
+```{r}
+LifeExp <- LifeExp[, !(colnames(LifeExp) %in% c('BMI'))]
+```
+
+When dealing with NA values, there are multiple approaches that can be considered:
+
+- Fill with the mean value: Replace the NA values with the mean value of the respective variable.
+- Dropping:
+  - Drop all rows that contain at least one NA value: Remove the rows from the dataset that have any NA values.
+  - Drop rows that contain more than 50% NA values: Exclude the rows that have more than 50% NA values, while keeping the remaining rows. The NA values can be filled with the mean value.
+- Interpolation: If the data represents a time series, interpolation techniques can be applied to estimate the missing values based on the existing data points.
+
+Since we are dealing with time series data assorted by country, the best approach would be to interpolate the data by country. However, from a careful examination of the dataframe it can be seen that there are columns that have null values for each year for some countries. Therefore, we resort to imputation by year, as the second best possible method. This involves replacing the null values with the mean value of each respective year. Imputation of each year's mean is done in the following code snippet:
+
+```{r}
+imputed_data <- list()
+
+for (year in unique(LifeExp$Year)) {
+  year_data <- LifeExp[LifeExp$Year == year, ]
+  for (col in colnames(year_data)[4:length(colnames(year_data))]) {
+    year_data[, col] <- ifelse(is.na(year_data[, col]), mean(year_data[, col], na.rm = TRUE), year_data[, col])
+  }
+  imputed_data <- append(imputed_data, list(year_data))
+}
+
+LifeExp <- bind_rows(imputed_data)
+
+nulls_breakdown(LifeExp)
+```
+As we can see the missing values have been successfully handled using the interpolation method. We can now proceed to address the issue of outliers. Outliers can have a significant impact on data analysis and modeling, and it is important to identify and handle them appropriately.
+
 
 ### Outlier analysis
 
 Outlier analysis is an essential step in exploring and understanding life expectancy data. It helps ensure data quality, identify anomalies and patterns, improve statistical analysis, inform policy decisions, and enhance data visualization and reporting.
-Outliers increase the error variance and reduces the power of statistical tests.They can cause bias and/or influence estimates. They can also impact the basic assumption of regression as well as other statistical models.
+Outliers increase the error variance and reduce the power of statistical tests. They can cause bias and/or influence estimates. They can also impact the basic assumption of regression as well as other statistical models.
+
+Similar to missing values, to address the presence of outliers in the data, several steps can be taken:
+
+1. Outlier detection: Identify the outliers in the dataset using appropriate statistical methods or techniques.
+  - Visualization: Create boxplots and histograms to visually inspect the distribution of the data and identify any potential outliers.
+  - Tukey's method: Apply Tukey's method or other outlier detection algorithms to determine the presence of outliers based on statistical thresholds or criteria.
+2. Outlier treatment: Decide on the approach for handling outliers. Options include:
+  - Dropping outliers: Remove the outlier observations from the dataset.
+  - Limiting/Winsorizing outliers: Cap the extreme values at a predetermined threshold.
+  - Transforming the data: Apply transformations such as logarithmic, inverse, or square root transformations to reduce the impact of outliers.
+
+Each of these steps aims to identify, assess, and appropriately handle the outliers in the dataset to ensure robust analysis and accurate interpretations.
+
+
+#### Outlier detection
+
+For each continuous variable in the dataset, a boxplot will be generated, displaying the median, quartiles, and any potential outliers. Additionally, histograms will be created to visualize the frequency distribution of the variable.
+
+By examining these plots, we can visually inspect the data and determine if there are any data points that deviate significantly from the majority of the observations, indicating the presence of potential outliers.
+
+ToDo: Improve the plots here. Idea: place the boxplot above/bellow the histogram - combo plot.
 
 ```{r}
-boxplot(LifeExp$Life.expectancy, xlab="Life Expectancy")
-boxplot(LifeExp$Adult.Mortality, xlab="Adult Mortality")
-boxplot(LifeExp$Alcohol, xlab="Alcohol")
+# Layout to split the screen
+# Draw the boxplot and the histogram 
+cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
+num_vars <- length(cont_vars)
+num_rows <- ceiling(sqrt(num_vars))
+num_cols <- ceiling(num_vars / num_rows)
+
+par(oma = c(0, 0, 0, 0))
+
+par(mfrow = c(num_rows, num_cols))
+
+for (i in 1:num_vars) {
+  col <- cont_vars[i]
+  
+  # Reduce the inner margins to make the plots larger
+  par(mar = c(2, 2, 1, 1))
+  
+  boxplot(LifeExp[, col], horizontal = TRUE, col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
+  
+  # Increase the inner margins for the histogram to make it taller
+  par(mar = c(4, 2, 1, 1))
+  
+  hist(LifeExp[, col], col = rgb(0.2, 0.8, 0.5, 0.5), main = paste(col), xlab = "")
+}
+
 ```
 
-From the box plot we can see that age below 45 is Outlier but we won't be removing them.
+Visually inspecting the data, it is evident that there are several outliers present in the variables, including the target variable (life expectancy). To statistically identify outliers, Tukey's method can be applied. This method defines outliers as values that lie outside 1.5 times the interquartile range (IQR). By calculating the quartiles and IQR for each variable, the upper and lower bounds can be determined, and any values outside these bounds can be classified as outliers.
+
+```{r}
+cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
+
+outlier_counts <- sapply(LifeExp[cont_vars], function(x) {
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr <- q3 - q1
+  lower_bound <- q1 - 1.5 * iqr
+  upper_bound <- q3 + 1.5 * iqr
+  outliers <- x < lower_bound | x > upper_bound
+  sum(outliers, na.rm = TRUE)
+})
+
+outlier_percent <- outlier_counts / nrow(LifeExp) * 100
+
+outliers_df <- data.frame(OutlierCount = outlier_counts, OutlierPercent = outlier_percent)
+kable(outliers_df, format = "markdown")
+
+```
+
+There seem to be a considerable number of outliers present in this dataset. Now that they have been identified, a question arises: What course of action should be taken regarding them?
+
+
+#### Dealing with Outliers
+
+There are several approaches to handling outliers in a dataset, and the typical options are as follows:
+
+1. Discard Outliers (preferably avoided to retain maximum information):
+   - This involves removing the data points that are considered outliers.
+  
+2. Apply Boundaries (Winsorization):
+   - Set upper and/or lower limits for the values, effectively capping extreme values without removing them entirely.
+
+3. Data Transformation:
+   - Utilize mathematical transformations such as logarithmic, inverse, square root, etc.
+   - Advantages: Can normalize the data and potentially eliminate outliers.
+   - Disadvantages: Cannot be applied to variables containing values of zero or below, as it may lead to undefined results.
+
+
+Given that each variable in the dataset exhibits a unique number of outliers and these outliers are distributed on different sides of the data, the most suitable approach would likely involve Winsorizing (limiting) the values for each variable individually until no outliers remain. The provided function bellow enables this process by iterating through each variable and allowing the specification of lower and/or upper limits for Winsorization. By default, the function generates two boxplots side by side for each variable, depicting the original data and the Winsorized data, respectively. Once a satisfactory limit is determined through visual analysis, the Winsorized data is saved in the wins_dict dictionary for convenient future access.
+
+```{r}
+test_wins <- function(col, lower_limit = 0, upper_limit = 0, show_plot = TRUE) {
+  LifeExp_original <- LifeExp[[col]]
+  q_low <- quantile(LifeExp[[col]], lower_limit)
+  q_up <- quantile(LifeExp[[col]], 1 - upper_limit)
+  LifeExp[[col]] <<- pmin(pmax(LifeExp[[col]], q_low), q_up)
+  # <<- Allows us to modify variables outside of the local scope of a function.
+  
+  if (show_plot) {
+    ylim <- range(LifeExp_original, na.rm = TRUE)
+    par(mfrow = c(1, 2))
+    boxplot(LifeExp_original, main = paste0("original\n ", col), ylim = ylim)
+    boxplot(LifeExp[[col]], main = paste0("wins=(", lower_limit, ",", upper_limit, ")\n", col), ylim = ylim)
+  }
+}
+
+test_wins(cont_vars[1], lower_limit = 0.01, show_plot = FALSE)
+test_wins(cont_vars[2], upper_limit = 0.04, show_plot = FALSE)
+test_wins(cont_vars[3], upper_limit = 0.05, show_plot = FALSE)
+test_wins(cont_vars[4], upper_limit = 0.0025, show_plot = FALSE)
+test_wins(cont_vars[5], upper_limit = 0.135, show_plot = FALSE)
+test_wins(cont_vars[6], lower_limit = 0.1, show_plot = FALSE)
+test_wins(cont_vars[7], upper_limit = 0.19, show_plot = FALSE)
+test_wins(cont_vars[8], upper_limit = 0.05, show_plot = FALSE)
+test_wins(cont_vars[9], lower_limit = 0.1, show_plot = FALSE)
+test_wins(cont_vars[10], upper_limit = 0.02, show_plot = FALSE)
+test_wins(cont_vars[11], lower_limit = 0.105, show_plot = FALSE)
+test_wins(cont_vars[12], upper_limit = 0.185, show_plot = FALSE)
+test_wins(cont_vars[13], upper_limit = 0.105, show_plot = FALSE)
+test_wins(cont_vars[14], upper_limit = 0.07, show_plot = FALSE)
+test_wins(cont_vars[15], upper_limit = 0.035, show_plot = FALSE)
+test_wins(cont_vars[16], upper_limit = 0.035, show_plot = FALSE)
+test_wins(cont_vars[17], lower_limit = 0.05, show_plot = FALSE)
+test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = FALSE)
+```
+
+(ToDo: Create prettier grahs)
+
+```{r}
+# Layout to split the screen
+# Draw the boxplot and the histogram 
+cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
+num_vars <- length(cont_vars)
+num_rows <- ceiling(2)
+num_cols <- ceiling(num_vars / num_rows)
+
+par(oma = c(0, 0, 0, 0))
+
+par(mfrow = c(num_rows, num_cols))
+
+for (i in 1:num_vars) {
+  col <- cont_vars[i]
+  
+  # Reduce the inner margins to make the plots larger
+  par(mar = c(2, 2, 1, 1))
+  
+  boxplot(LifeExp[, col], col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
+  
+  # Increase the inner margins for the histogram to make it taller
+  par(mar = c(4, 2, 1, 1))
+}
+```
+
 
 ## Exploratory Data Analysis
 
@@ -173,8 +472,6 @@ pnh_life_exp <- plotNormalHistogram(LifeExp$Life.expectancy, prob = FALSE, col="
 pnh_alch <- plotNormalHistogram(LifeExp$Alcohol, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Alcohol Histogram",length = 10000, linecol="#ffa600", lwd=3)
 
 pnh_school <-plotNormalHistogram(LifeExp$Schooling, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Schooling",length = 10000, linecol="#ffa600", lwd=3)
-
-pnh_bmi <-plotNormalHistogram(LifeExp$BMI, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "BMI Histogram",length = 10000, linecol="#ffa600", lwd=3)
 
 pnh_gdp <- plotNormalHistogram(LifeExp$GDP, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Histogram",length = 10000, linecol="#ffa600", lwd=3)
 
@@ -274,17 +571,15 @@ life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jit
 life_expectancy_vs_GDP 
 ```
 
-### 6. Correlation between Life expectancy and BMI / Thinness
+### 6. Correlation between Life expectancy Thinness
 
 ```{r}
-life_expectancy_vs_bmi <- ggplot(LifeExp, aes(BMI, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
-
 life_expectancy_vs_thin5_9  <- ggplot(LifeExp, aes(thinness.5.9.years, Life.expectancy)) + geom_jitter(color = "orange", alpha = 0.5) + theme_light()
                               
-life_expectancy_vs_thin10_19 <- ggplot(LifeExp, aes(thinness..1.19.years, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
+life_expectancy_vs_thin10_19 <- ggplot(LifeExp, aes(thinness.10.19.years, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
 
-m <- plot_grid(life_expectancy_vs_bmi, life_expectancy_vs_thin5_9, life_expectancy_vs_thin10_19) 
-title <- ggdraw() + draw_label("Correlation between BMI / Thinness and Life expectancy", fontface='bold')
+m <- plot_grid(life_expectancy_vs_thin5_9, life_expectancy_vs_thin10_19) 
+title <- ggdraw() + draw_label("Correlation between Thinness and Life expectancy", fontface='bold')
 plot_grid(title, m, ncol=1, rel_heights=c(0.1, 1))
 ```
 
