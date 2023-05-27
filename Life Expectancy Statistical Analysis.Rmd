@@ -1,0 +1,326 @@
+---
+title: "Life Expectancy Statistical Analysis"
+author: "Marija Cveevska"
+date: "2023-05-24"
+output: 
+  html_document:
+    keep_md: yes
+    toc: yes
+    df_print: kable
+  pdf_document:
+    toc: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(warn=-1)
+```
+
+```{r,results="hide", message = FALSE}
+library(ggplot2)
+library(GGally)
+library(ggcorrplot)
+library(plotly)
+library(ggplot2)
+library(tidyverse)
+library(cowplot)
+library(psych)
+library(lattice)
+library(xtable)
+library(plyr); library(dplyr)
+library(gridExtra)
+library(WVPlots)
+library(rcompanion)
+```
+## Why is it important to have knowledge about life expectancy?
+
+> Understanding life expectancy, which refers to the average duration a person is projected to live, holds significance as it serves as a comprehensive measure of community well-being. Factors such as elevated infant mortality rates, increased occurrences of suicide, limited access to quality healthcare, and other determinants can contribute to lower life expectancies. In addition, life expectancy finds various applications in the financial domain, encompassing areas such as life insurance, pension planning, and Social Security benefits.
+
+Life expectancy prediction is valuable for insurance businesses and bank loans because it allows them to assess risk and make informed decisions.Accurate life expectancy prediction enables businesses to make more precise risk assessments and pricing decisions. It helps them manage their financial exposure, align their products with the appropriate risk levels, and ensure the long-term sustainability of their operations. 
+
+Insurance Businesses:
+
+ - Life Insurance: Life expectancy prediction helps insurance companies assess the risk associated with providing life insurance policies. By estimating life expectancy, they can determine the likelihood of a policyholder's lifespan exceeding the policy term. This information allows insurers to set appropriate premiums and policy terms based on the individual's life expectancy.
+ - Annuities and Pension Plans: For annuities and pension plans, life expectancy prediction helps insurers calculate the expected payout duration. It allows them to estimate the length of time they will need to provide benefits, impacting the pricing and financial sustainability of these products.
+
+Bank Loans:
+
+ - Mortgage and Home Loans: Life expectancy prediction can be used to assess the risk associated with long-term loans such as mortgages. It helps lenders evaluate the probability of borrowers completing their loan terms based on their life expectancy. This information can influence loan approval decisions, interest rates, and loan terms.
+ - Personal Loans: In cases where personal loans involve significant sums or extended repayment periods, life expectancy prediction can provide insights into the borrower's ability to repay the loan. It helps lenders evaluate the risk of default or early termination due to the borrower's life expectancy.
+
+## About the Dataset
+
+The dataset related to life expectancy for 193 countries has been collected from WHO data repository website and its corresponding economic data was collected from United Nation website. Among all categories of health-related factors only those critical factors were chosen which are more representative.
+
+We obtained this dataset from Kaggle and It is publicly available for educational purposes. 
+In this project we have considered data from year 2000-2015 for 193 countries for further analysis.
+
+## Data Wrangling 
+
+There are 22 columns in our dataset. These columns’s label are listed below.
+
+***Country*** - Country <br>
+***Year*** - data is collected from 2000 - 2015 years<br>
+***Status*** - Developed or Developing status<br>
+***Life expectancy*** - Life Expectancy in age<br>
+***Adult Mortality*** - Adult Mortality Rates of both sexes (probability of dying between 15 and 60 years per 1000 population)<br>
+***infant deaths*** - Number of Infant Deaths per 1000 population<br>
+***Alcohol*** - Alcohol, recorded per capita (15+) consumption (in litres of pure alcohol)<br>
+***percentage expenditure*** - Expenditure on health as a percentage of Gross Domestic Product per capita(%)<br>
+***Hepatitis B*** - Hepatitis B (HepB) immunization coverage among 1-year-olds (%)<br>
+***Measles*** - number of reported cases per 1000 population<br>
+***BMI*** - Average Body Mass Index of entire population<br>
+***under-five deaths*** - Number of under-five deaths per 1000 population<br>
+***Polio*** - (Pol3) immunization coverage among 1-year-olds (%)<br>
+***Total expenditure*** - General government expenditure on health as a percentage of total government expenditure (%)<br>
+***Diphtheria*** - Diphtheria tetanus toxoid and pertussis (DTP3) immunization coverage among 1-year-olds (%)<br>
+***HIV/AIDS*** - Deaths per 1 000 live births HIV/AIDS (0-4 years)<br>
+***GDP*** - Gross Domestic Product per capita (in USD)<br>
+***Population*** - Population of the country<br>
+***thinness 1-19 years*** - Prevalence of thinness among children and adolescents for Age 10 to 19 (% )<br>
+***thinness 5-9 years*** - Prevalence of thinness among children for Age 5 to 9(%)<br>
+***Income composition of resources*** - Human Development Index in terms of income composition of resources (index ranging from 0 to 1)<br>
+***Schooling*** - Number of years of Schooling(years)<br>
+
+```{r}
+LifeExp <- read.csv("C:/Users/marij/Desktop/Life Expectancy STats/LifeExpectancyData.csv")
+head(LifeExp, 5)
+```
+The dataset contains 2938 rows and 22 columns
+
+```{r}
+dim(LifeExp)
+```
+To understand more about the dataset we are going to take a look at its structure:
+```{r}
+str(LifeExp)
+```
+```{r}
+summary(LifeExp)
+```
+### Data Cleaning
+
+#### Dealing with NA values
+
+```{r}
+colSums(is.na(LifeExp))
+```
+These results indicate that most of the missing data is for population, Hepatitis B and GDP.
+In order to avoid errors we will replace the missing values with the mean.
+
+```{r}
+LifeExp_num <- select(LifeExp,-c(1,2,3))
+colMeans(LifeExp_num, na.rm = TRUE)
+
+```
+
+```{r}
+for(i in 4:ncol(LifeExp)) {
+  LifeExp[ , i][is.na(LifeExp[ , i])] <- mean(LifeExp[ , i], na.rm=TRUE)
+}
+summary(LifeExp) 
+```
+```{r}
+colSums(is.na(LifeExp))
+```
+
+```{r}
+dim(LifeExp)
+```
+
+#### Checking unique values
+
+Let's have a look at the unique values in our dataset.
+
+We do this just to double check that number of unique values corresponds to the dataset's description.
+
+```{r}
+# Apply the length function to unique values in each column using sapply()
+num_unique_values <- sapply(LifeExp, function(x) length(unique(x)))
+
+# Print the number of unique values for each column
+for (i in 1:ncol(LifeExp)) {
+  column_name <- names(LifeExp)[i]
+  num_unique <- num_unique_values[i]
+  
+  cat("Number of unique values for column '", column_name, "': ", num_unique, "\n")
+}
+```
+
+### Outlier analysis
+
+Outlier analysis is an essential step in exploring and understanding life expectancy data. It helps ensure data quality, identify anomalies and patterns, improve statistical analysis, inform policy decisions, and enhance data visualization and reporting.
+Outliers increase the error variance and reduces the power of statistical tests.They can cause bias and/or influence estimates. They can also impact the basic assumption of regression as well as other statistical models.
+
+```{r}
+boxplot(LifeExp$Life.expectancy, xlab="Life Expectancy")
+boxplot(LifeExp$Adult.Mortality, xlab="Adult Mortality")
+boxplot(LifeExp$Alcohol, xlab="Alcohol")
+```
+
+From the box plot we can see that age below 45 is Outlier but we won't be removing them.
+
+## Exploratory Data Analysis
+
+### Histogram visualization
+```{r}
+library(rcompanion)
+
+par(mfrow=c(2,2))
+
+pnh_life_exp <- plotNormalHistogram(LifeExp$Life.expectancy, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Life Expectancy Histogram",length = 10000, linecol="#ffa600", lwd=3)
+
+
+pnh_alch <- plotNormalHistogram(LifeExp$Alcohol, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Alcohol Histogram",length = 10000, linecol="#ffa600", lwd=3)
+
+pnh_school <-plotNormalHistogram(LifeExp$Schooling, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Schooling",length = 10000, linecol="#ffa600", lwd=3)
+
+pnh_bmi <-plotNormalHistogram(LifeExp$BMI, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "BMI Histogram",length = 10000, linecol="#ffa600", lwd=3)
+
+pnh_gdp <- plotNormalHistogram(LifeExp$GDP, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Histogram",length = 10000, linecol="#ffa600", lwd=3)
+
+pnh_gdp_log <- plotNormalHistogram(log(LifeExp$GDP), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
+
+pnh_popul <- plotNormalHistogram(LifeExp$Population, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Histogram",length = 10000, linecol="#ffa600", lwd=3)
+
+pnh_popul_log <- plotNormalHistogram(log(LifeExp$Population), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
+
+```
+
+
+### 1. Developing vs Developed Countries
+```{r}
+ggplot(LifeExp, aes(x = Status, fill = Status)) + 
+  geom_bar() + 
+  scale_fill_manual(values = c("#ffa600","#bc5090")) + 
+  labs(title = "Status of Country", x = "Status", y = "Count") +
+  theme(axis.text = element_text(size = 8), axis.title = element_text(size = 8), 
+        axis.text.y = element_text(size = 8), axis.title.y = element_text(size = 8))
+```
+
+
+```{r}
+ggplot(LifeExp, aes(x=Life.expectancy, fill=Status)) +
+    geom_density(alpha=.5) +
+    labs(title  = "Life Expectancy by Status", x ="Life Expectancy", y="Density") +
+  scale_fill_manual(values = c("#FFA600", "#A05195"))
+
+```
+
+### 2.Correlation between Health expenditure and Life expectancy.
+
+Percentage Expenditure - Expenditure on health as a percentage of Gross Domestic Product per capita (%):
+This indicator calculates the proportion of total health expenditure in relation to the Gross Domestic Product (GDP) per capita. It measures the share of the country's economic output (GDP) that is spent on healthcare per person. It provides insights into the financial commitment to healthcare relative to the economic well-being of the population. Higher values indicate a larger proportion of GDP per capita allocated to healthcare, suggesting greater investment in the health sector.
+
+Total Expenditure - General government expenditure on health as a percentage of total government expenditure (%):
+This indicator focuses specifically on the proportion of government expenditure that is allocated to healthcare. It calculates the share of total government expenditure that is dedicated to healthcare services and programs. It helps assess the priority given to healthcare within the government's overall budget allocation. Higher values indicate a greater emphasis on healthcare within the government's expenditure decisions.
+
+The key distinction lies in the denominator used to calculate the proportions. Percentage expenditure considers the Gross Domestic Product per capita as the benchmark, while total expenditure focuses on the proportion of government expenditure dedicated to healthcare. Both indicators provide different perspectives on the allocation of resources to healthcare and can be used to evaluate financial commitments and priorities in the healthcare sector.
+
+```{r}
+life_expectancy_vs_percentage_expenditure <-  ggplot(LifeExp, aes(percentage.expenditure, Life.expectancy)) + 
+                                      geom_jitter(color = "yellow", alpha = 0.5) + theme_light()
+
+life_expectancy_vs_Total_expenditure  <- ggplot(LifeExp, aes(Total.expenditure, Life.expectancy)) +
+                                      geom_jitter(color = "purple", alpha = 0.5) + theme_light()
+
+p <- plot_grid(life_expectancy_vs_percentage_expenditure, life_expectancy_vs_Total_expenditure) 
+title <- ggdraw() + draw_label("Correlation between Health expenditure and Life expectancy", fontface='bold')
+plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+```
+We can see from the above graph that the Higher Life Expectancy is more concentrated when expenditure varies from 5k - 20k.
+
+
+### 3.Correlation between Health expenditure and Immunization.
+
+```{r}
+life_expectancy_vs_Hepatitis_B <- ggplot(LifeExp, aes(Hepatitis.B, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
+
+life_expectancy_vs_Diphtheria  <- ggplot(LifeExp, aes(Diphtheria, Life.expectancy)) + geom_jitter(color = "orange", alpha = 0.5) + theme_light()
+                              
+life_expectancy_vs_Polio  <- ggplot(LifeExp, aes(Polio, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
+
+life_expectancy_vs_Measles  <- ggplot(LifeExp, aes(Measles, Life.expectancy)) + geom_jitter(color = "light green", alpha = 0.5) + theme_light()
+
+p <- plot_grid(life_expectancy_vs_Hepatitis_B, life_expectancy_vs_Diphtheria, life_expectancy_vs_Polio, life_expectancy_vs_Measles) 
+title <- ggdraw() + draw_label("Correlation between Immunizations and life expectancy", fontface='bold')
+plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+```
+### 4. Life expectancy and Alcohol
+
+Developed countries tend to have higher levels of alcohol consumption compared to developing countries. This can be attributed to various factors such as higher income levels, greater access to alcohol, more established alcohol industries, and different cultural norms surrounding alcohol.
+Higher GDP at Developed countries can influence alcohol consumption patterns to some extent. As countries experience economic growth and an increase in GDP, there is often an associated rise in income levels and discretionary spending power. This can lead to increased alcohol consumption. 
+
+```{r}
+ggplot(LifeExp, aes(x=Alcohol, fill=Status)) +
+    geom_density(alpha=.5) +
+    labs(title  = "Alcohol consumption by Status", x ="Alcohol", y="Density") +
+  scale_fill_manual(values = c("#FFA600", "#A05195"))
+```
+```{r}
+ggplot(LifeExp, aes(x=log(GDP), fill=Status)) +
+    geom_density(alpha=.5) +
+    labs(title  = "GDP by Status", x ="GDP", y="Density") +
+  scale_fill_manual(values = c("#FFA600", "#A05195"))
+```
+
+```{r}
+life_expectancy_vs_Alcohol  <- ggplot(LifeExp, aes(Alcohol, Life.expectancy)) + geom_jitter(color = "#A05195", alpha = 0.5) + theme_light()
+life_expectancy_vs_Alcohol 
+```
+
+### 5. Correlation between Life expectancy and GDP
+```{r}
+life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jitter(color = "lightblue", alpha = 0.5) + theme_light()
+life_expectancy_vs_GDP 
+```
+
+### 6. Correlation between Life expectancy and BMI / Thinness
+
+```{r}
+life_expectancy_vs_bmi <- ggplot(LifeExp, aes(BMI, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
+
+life_expectancy_vs_thin5_9  <- ggplot(LifeExp, aes(thinness.5.9.years, Life.expectancy)) + geom_jitter(color = "orange", alpha = 0.5) + theme_light()
+                              
+life_expectancy_vs_thin10_19 <- ggplot(LifeExp, aes(thinness..1.19.years, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
+
+m <- plot_grid(life_expectancy_vs_bmi, life_expectancy_vs_thin5_9, life_expectancy_vs_thin10_19) 
+title <- ggdraw() + draw_label("Correlation between BMI / Thinness and Life expectancy", fontface='bold')
+plot_grid(title, m, ncol=1, rel_heights=c(0.1, 1))
+```
+
+
+### 7. Correlation between Life expectancy and Income composition of resources
+
+The term "Income composition of resources" refers to a component of the Human Development Index (HDI), which is a measure used to assess the overall development and well-being of a country's population. The Income composition of resources specifically focuses on income-related indicators and their contribution to human development.
+
+In the context of the HDI, the Income composition of resources index is a numerical value that ranges from 0 to 1. It reflects the extent to which a country's income distribution contributes to overall human development.
+
+A higher value of the Income composition of resources index indicates a more equitable distribution of income, where a larger proportion of the population has access to resources and opportunities for development. This suggests that income is shared more evenly among individuals within the country.
+
+Conversely, a lower value of the index indicates a more unequal income distribution, with a smaller proportion of the population having access to resources and opportunities for development. This suggests that income is concentrated in the hands of a smaller segment of the population.
+
+
+```{r}
+life_expectancy_vs_incomecomp <- ggplot(LifeExp, aes(Income.composition.of.resources, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
+
+life_expectancy_vs_incomecomp
+```
+By this scatterplot we can see that The Income composition of resources and their contribution to human development positively influences the Life Expectancy.
+
+## Constructing Correlation Matrix
+
+```{r}
+# Compute the correlation matrix
+numeric_vars <- LifeExp[, sapply(LifeExp, is.numeric)]
+cor_matrix <- cor(numeric_vars)
+
+# Plot the correlation matrix using corrplot
+corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
+
+# Adjust the text size
+
+```
+
+
+
+
