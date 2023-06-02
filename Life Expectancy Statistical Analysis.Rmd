@@ -32,6 +32,13 @@ library(WVPlots)
 library(rcompanion)
 library(knitr)
 library(DescTools)
+library(car)
+library(caret)
+library(leaps)
+library(olsrr)
+library(glmnet)
+library(lmtest)
+library(corrr)
 ```
 ## Why is it important to have knowledge about life expectancy?
 
@@ -136,9 +143,9 @@ Before we proceed with the missing values analysis, let's perform a couple of qu
 colnames(LifeExp)[colnames(LifeExp) == "thinness..1.19.years"] <- "thinness.10.19.years"
 
 # Convert a character column to a factor column
-LifeExp$Year    <- factor(LifeExp$Year)
-LifeExp$Country <- factor(LifeExp$Country)
-LifeExp$Status  <- factor(LifeExp$Status)
+LifeExp$Year    <- as.factor(LifeExp$Year)
+LifeExp$Country <- as.factor(LifeExp$Country)
+LifeExp$Status  <- as.factor(LifeExp$Status)
 
 str(LifeExp)
 ```
@@ -565,6 +572,12 @@ life_expectancy_vs_Alcohol  <- ggplot(LifeExp, aes(Alcohol, Life.expectancy)) + 
 life_expectancy_vs_Alcohol 
 ```
 
+```{r}
+life_expectancy_vs_Alcohol  <- ggplot(LifeExp, aes(Schooling, Life.expectancy)) + geom_jitter(color = "#A05195", alpha = 0.5) + theme_light()
+life_expectancy_vs_Alcohol 
+```
+
+
 ### 5. Correlation between Life expectancy and GDP
 ```{r}
 life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jitter(color = "lightblue", alpha = 0.5) + theme_light()
@@ -611,10 +624,457 @@ cor_matrix <- cor(numeric_vars)
 
 # Plot the correlation matrix using corrplot
 corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
-
+  
 # Adjust the text size
 
 ```
+#### Network plot
+
+```{r}
+cor_matrix %>% corrr::network_plot(min_cor = .3)
+```
+
+
+
+## Linear Regression
+
+After completing the data cleaning process and exploring and engineering features, we can now move on to the main phase of this project: making predictions using linear regression. Initially, we will examine the effectiveness of a *simple linear regressor* (using only one feature). Then, we will progress to employing all the features through *multiple linear regression* or selecting a subset of features using appropriate techniques for *feature selection*.
+
+Based on the exploratory data analysis (EDA), it is evident that our target variable, "Life expectancy," demonstrates the highest correlation with "Adult mortality." However, upon examining the scatter plot, it appears that this variable may not be suitable for linear regression. Therefore, we proceed by choosing the second most correlated variable, namely "Income.composition.of.resources". By observing the scatter plot for this particular variable, we can notice a linear trend.
+
+Before we start, the question of whether to perform feature scaling arises. Feature scaling is not an absolute necessity for linear regression. The algorithm calculates the coefficients for each feature by computing the differences between the feature values and their mean. Therefore, feature scaling does not have a direct impact on the coefficients obtained from the linear regression model.
+
+However, considering the benefits of feature scaling, such as ensuring consistent and meaningful comparisons, and the fact that it is a mandatory step when using regularization techniques, we have chosen to scale the data at the outset.
+
+Afterward, to ensure unbiased evaluations, we proceed by randomly partitioning our dataset into separate training and test sets. For models that require cross-validation, we will utilize a portion of the training set as a validation set.
+
+
+```{r}
+LifeExp_scaled <- LifeExp %>% mutate(across(where(is.numeric), scale))
+LifeExp_scaled_regression <- LifeExp_scaled %>% select(-Country, -Year)
+
+train_percent <- 0.8
+test_percent <- 1 - train_percent
+num_rows <- nrow(LifeExp_scaled_regression)
+train_size <- floor((train_percent) * nrow(LifeExp_scaled_regression))
+
+set.seed(1)
+
+train_indices <- sample.int(n = num_rows, size = train_size)
+
+train <- LifeExp_scaled_regression[train_indices,]
+test <- LifeExp_scaled_regression[-train_indices,]
+
+cat("Train size: ", train_size, "\nTest size: ", num_rows - train_size)
+
+Y_colname <- "Life.expectancy"
+X_colnames <- colnames(LifeExp_scaled_regression)[colnames(LifeExp_scaled_regression) != Y_colname]
+
+```
+
+### Simple linear regression
+
+The linear regression equation is given by: $$ Y = \beta_0 + \beta_1 \cdot x + \varepsilon $$,\
+where $$\beta_0$$ represents the intercept, $$\beta_1$$ represents the coefficient for the chosen feature "Income.composition.of.resources" and $$\varepsilon$$ represents a random error.
+
+```{r}
+simple_lm <- lm(Life.expectancy ~ Income.composition.of.resources, data = train)
+summary(simple_lm)
+```
+
+The analysis reveals that the variable "Income.composition.of.resources" has a moderate-to-high level of explanatory power, as indicated by an R-squared value of 0.6248. This means that approximately 62.48% of the variability in life expectancy can be attributed to this variable.
+
+Both the intercept and the coefficient associated with "Income.composition.of.resources" are highly significant, as indicated by the p-values being less than 2e-16. The F-statistic also supports this finding, with a value of 3910 and an extremely low p-value (< 2.2e-16), suggesting that the observed relationship is not due to chance.
+
+The formula for the regression line can be expressed as follows:\
+Life.Expectancy = 41.2191 + 43.7221 * Income.composition.of.resources\
+and it is visualized bellow.
+
+```{r}
+simple_lm_no_intercept <- lm(Life.expectancy ~ 0 + Income.composition.of.resources, data = train)
+summary(simple_lm_no_intercept)
+```
+
+
+```{r}
+ggplot(train, aes(x = Income.composition.of.resources, y = Life.expectancy)) +
+  geom_point(color = "#80b1d3", size = 2, alpha = 0.9) +
+  labs(x = "Income composition of resources", y = "Life expectancy") +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 8),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12)) +
+  geom_abline(slope = coef(simple_lm)["Income.composition.of.resources"],
+              intercept = coef(simple_lm)["(Intercept)"],
+              color = "red", linetype = "solid", linewidth = 1.2)
+
+```
+That’s not the whole picture though. Residuals could show how poorly a model represents data. Residuals are leftover of the outcome variable after fitting a model (predictors) to data, and they could reveal patterns in the data unexplained by the fitted model. Using this information, not only we can check if linear regression assumptions are met, but we can improve our model in an exploratory way.
+
+Let’s now have a look at the *diagnostic plots*, in order to check whether Linear regression assumptions are met. These assumptions include:
+
+1. **Linearity**: There should be a linear relationship between the predictors (x) and the outcome (y). This implies that the relationship between the variables can be adequately captured by a straight line or a linear combination of predictors.
+
+2. **Independence of predictors**: The predictors (x) should be independent of each other, meaning there should be no significant correlation or multicollinearity among the predictor variables. This assumption ensures that the predictors contribute unique information to the model.
+
+3. **No perfect multicollinearity**: The predictors should not exhibit perfect multicollinearity, which means that they should not be perfectly correlated with each other. Perfect multicollinearity can cause numerical instability and difficulties in estimating the regression coefficients.
+
+4. **Error term with mean zero**: The residual errors (the differences between the observed outcome and the predicted outcome) should have a mean value of zero. This assumption assumes that, on average, the model is unbiased in its predictions.
+
+5. **Constant variance of residuals (homoscedasticity)**: The residual errors should have a constant variance across the range of predicted values. This assumption implies that the spread of residuals is consistent, regardless of the predicted values.
+
+6. **Independence of residuals**: The residual errors should be independent of each other and independent of the predictor variables (x). Independence of residuals assumes that the errors are not influenced by any patterns or structures in the data that are not captured by the predictor variables.
+
+It is important to assess these assumptions before relying on the results of a linear regression model to ensure the validity of the model and the reliability of the inferences drawn from it.
+
+```{r}
+par(mfrow = c(2, 2))
+plot(simple_lm)
+```
+*Residuals vs Fitted*
+
+This plot shows if residuals have non-linear patterns. There could be a non-linear relationship between predictor variables and the outcome variable, and the pattern could show up in this plot if the model doesn’t capture the non-linear relationship. In our case, we find almost equally spread residuals around a horizontal line without distinct patterns. So, this is a good indication that we don’t have non-linear relationships.
+
+*Normal Q-Q*
+
+This plot shows if residuals are normally distributed. Do residuals follow a straight line well or do they deviate severely? Thus for small sample sizes, it can't be assumed that the estimator $$\hat{\beta}$$ isn't Gaussian either, meaning the standard confidence intervals and significance tests are invalid. Our plot shows many points lying on the dotted line, however the rightmost and leftmost points are deviating from the line, suggesting slight right and left skewness.
+
+*Scale-Location*
+
+It's is also called a Spread-Location plot. This plot shows if residuals are spread equally along the ranges of predictors. This is how we can check the assumption of equal variance (*homoscedasticity*). It’s good if we see a horizontal line with equally (randomly) spread points, which is true in our case (the line is roughly horizontal).
+
+*Residuals vs Leverage*
+
+Leverage refers to the extent to which the coefficients in the regression model would change if a particular observation was removed from the dataset. Here, we watch out for outlying values at the upper right corner or at the lower right corner. Those spots are the places where cases can be influential against a regression line. When cases are outside of the dashed lines (meaning they have high “Cook’s distance” scores), the cases are influential to the regression results. The regression results will be altered if we exclude those cases.\
+We can observe that there are not any influential points in our regression model.
+
+By the previous analysis, we can conclude that our data is behaving linearly as we expected and it does have homoscedasticity.
+
+```{r}
+pred <- predict(simple_lm, newdata = test)
+rmse <- sqrt(mean((test$Life.expectancy - pred)^2))
+normalized_rmse_std <- sqrt(mean((pred - test$Life.expectancy)^2)) / sd(test$Life.expectancy)
+normalized_rmse_range <- sqrt(mean((pred - test$Life.expectancy)^2)) / diff(range(test$Life.expectancy))
+cat("RMSE =", rmse)
+cat("\nNormalized RMSE (sd)    =", normalized_rmse_std)
+cat("\nNormalized RMSE (range) =", normalized_rmse_range)
+```
+The normalized RMSE (sd) is 0.5961559, indicating that the model's predictions have an error of around 59.6 % of the standard deviation of the target variable. The normalized RMSE (range) is 0.1281596, suggesting that the model's predictions have an error of approximately 12.8% of the range of the target variable.
+
+### Multiple linear regression
+
+In this section we will train a regression model using multiple features. As part of the process we will select the most important features for the model using backward and forward selection and also check how well it performs on a test set.
+
+```{r}
+full_lm <- lm(train[,Y_colname] ~ ., data = train[, X_colnames])
+summary(full_lm)
+```
+The summary indicates that the residuals are symmetrically distributed, with a median almost equal to 0 (0.0793). We will examine the residuals more closely later. The full Linear regression model explains 84.99% of the variance associated with the response variable. The F-statistic is 733.3 (>> 1), and its p-value is nearly 0, providing clear evidence against the null hypothesis that all coefficients are equal to zero. This means that at least one variable is associated with the response. The p-values of the predictor variables allow us to determine their significance. Variables with lower p-values are more significant in relation to the response. Notably, features such as infant.deaths, Alcohol, under.five.deaths, and GDP are not statistically significant in our model.
+
+To check the multicollinearity in our data we will look at the Variance Inflation Factors (VIF):
+
+```{r}
+vif_values <- vif(full_lm)
+sorted_vif <- sort(vif_values, decreasing = TRUE)
+vif_table <- data.frame(VIF = sorted_vif)
+vif_table
+```
+
+It is generally desirable to have VIF values as small as possible, closer to 1, which indicates low levels of collinearity.  As a rule of thumb VIF = 5 is taken as a threshold, and any independent variable with VIF > 5 will have to be removed, due to problematic amount of collinearity.
+
+The VIF values for under.five.deaths, infant.deaths, thinness.10.19.years, thinness.5.9.years and Income.composition.of.resources have high values (> 5) that indicate collinearity problem. Therefore, we've decided to remove them from the model.
+
+```{r}
+cols_to_remove <- c("under.five.deaths", "infant.deaths", "thinness.10.19.years", "thinness.5.9.years", "Income.composition.of.resources")
+X_colnames_reduced <- X_colnames[!(X_colnames %in% cols_to_remove)]
+
+
+full_lm_low_vif <- lm(train[,Y_colname] ~ ., data = train[, X_colnames_reduced])
+summary(full_lm_low_vif)
+```
+As we can see after removing columns with high VIF, the R-squared value decreased. However, it is important to note that the primary goal of removing variables with high VIF is to address the issue of collinearity and improve the model's reliability and interpretability. We expect the adjusted model to be more appropriate for analysis and inference.
+
+Let’s now have a look at the diagnostic plots.
+
+```{r}
+par(mfrow=c(2,2))
+plot(full_lm_low_vif)
+```
+
+Fitted vs Residual graph\
+The red line is very close to zero and the spread of the residuals is approximately the same across the x axis, so we have no discernible non-linear trends or indications of non-constant variance.
+
+Normal Q-Q Plot\
+The residuals deviate from the diagonal line in both the upper and lower tail. This plot indicates that the tails are ‘lighter’ (have smaller values) than what we would expect under the standard modeling assumptions.
+
+Scale-Location\
+The red line deviates just a little from horizontal, showing very small presence of heteroskedasticity.
+
+Residuals vs Leverage\
+In this plot we see no evidence of outliers. The “Cook’s distance” dashed curves don’t even appear on the plot. None of the points come close to having both high residual and leverage.
+
+
+### Linear model (forward / backward model selection)
+
+Next, we can explore approaches to reduce the variance of the model, namely backward and forward model selection. Empirically, backward selection tends to perform better in this regard. However, we also retain the forward selection method for comparison purposes.
+
+
+```{r, echo=FALSE}
+nvmax <- 26 # 2 x number of variables
+
+forward_sel_lm = regsubsets(train[,Y_colname] ~., data = train[, X_colnames_reduced], method = 'forward', nvmax = nvmax)
+backward_sel_lm = regsubsets(train[,Y_colname] ~., data = train[, X_colnames_reduced], method = 'backward', nvmax = nvmax)
+```
+
+```{r, echo=FALSE}
+plot_max_point <- function(values){
+  max_idx = which.max(values)
+  points(max_idx, values[max_idx], col = 'red', cex = 2, pch = 20)
+}
+
+plot_min_point <- function(values){
+  min_idx = which.min(values)
+  points(min_idx, values[min_idx], col = 'red', cex = 2, pch = 20)
+}
+
+plot_subsets_summary <- function(featureSelection_lm){
+  
+  featureSelection_lm_summary <- summary(featureSelection_lm)
+
+  xlabel = 'Number of iterations'
+  
+  par(mfrow = c(3, 1))
+  
+  adjr2_list <- featureSelection_lm_summary$adjr2
+  max_adjr2_idx <- which.max(adjr2_list)
+  plot(adjr2_list, xlab = xlabel, ylab = 'Adjusted R2', type = 'l')
+  plot_max_point(values = adjr2_list) # The model with highest value is the best model.
+  text(x = max_adjr2_idx, y = adjr2_list[max_adjr2_idx], labels = max_adjr2_idx, pos = 1)
+  
+  cp_list <- featureSelection_lm_summary$cp
+  min_cp_idx <- which.min(cp_list)
+  plot(cp_list, xlab = xlabel, ylab = 'Cp', type = 'l')
+  plot_min_point(values = cp_list) # The model with least value is the best model.
+  text(x = min_cp_idx, y = cp_list[min_cp_idx], labels = min_cp_idx, pos = 3)
+  
+  bic_list <- featureSelection_lm_summary$bic
+  min_bic_idx <- which.min(bic_list)
+  plot(bic_list, xlab = xlabel, ylab = 'BIC', type = 'l')
+  plot_min_point(values = bic_list) # The model with least value is the best model.
+  text(x = min_bic_idx, y = bic_list[min_bic_idx], labels = min_bic_idx, pos = 3)
+}
+```
+
+Both feature selection techniques yielded the same results. So, for simplicity, we will show the results only for the backward selection method.
+
+```{r}
+#plot_subsets_summary(forward_sel_lm)
+plot_subsets_summary(backward_sel_lm)
+```
+
+Based on the observed graphs, it is clear that different statistical measures, such as Cp, BIC, and Adjusted R-squared, produce varying results in the feature selection process. The use of Adjusted R-squared led to a model with one less variable compared to the original model. Cp resulted in the removal of two variables, while BIC suggested eliminating four variables from the model. Notably, Cp and AIC are equivalent and select the same model, hence we have focused on presenting the results based on Cp.
+
+```{r}
+# Get the chosen variables according to each statistical measure
+backward_sel_lm_summary <- summary(backward_sel_lm)
+vars_adjr2 <- names(coefficients(backward_sel_lm, which.max(backward_sel_lm_summary$adjr2)))
+vars_cp <- names(coefficients(backward_sel_lm, which.min(backward_sel_lm_summary$cp)))
+vars_bic <- names(coefficients(backward_sel_lm, which.min(backward_sel_lm_summary$bic)))
+
+# Get the variables in the full model
+vars_full_model <- names(coef(full_lm_low_vif))
+
+# Create a data frame to store the included variables
+selected_vars_df <- data.frame(Feature = vars_full_model, AdjR2 = 0, Cp = 0, BIC = 0)
+
+# Update the data frame with the variables included in each model
+selected_vars_df$AdjR2 <- as.numeric(selected_vars_df$Feature %in% vars_adjr2)
+selected_vars_df$Cp <- as.numeric(selected_vars_df$Feature %in% vars_cp)
+selected_vars_df$BIC <- as.numeric(selected_vars_df$Feature %in% vars_bic)
+
+# Remove the intercept from the data frame
+selected_vars_df <- selected_vars_df[-1, ]
+
+kable(selected_vars_df, row.names = FALSE)
+```
+
+The feature selection algorithm consistently suggests that the variable "Total.expenditure" should be eliminated from the final model. This recommendation is supported by all three statistical measures. Furthermore, both Cp and BIC also favor removing the "Population" variable. From a practical standpoint, there are valid reasons for excluding these variables:
+
+1. Population: Including the population of a country in the model is unlikely to have a direct impact on life expectancy. Therefore, it can be deemed unnecessary for predicting life expectancy accurately.
+
+2. Total.expenditure: The information conveyed by the "Total.expenditure" variable is largely captured by the "percentage.expenditure" variable. Hence, including both variables in the model would introduce redundancy without significantly enhancing our understanding.
+
+By excluding these variables, the final model becomes more concise and interpretable without compromising the explained variance to a great extent. However, it is essential to verify the impact on explained variance before drawing a definitive conclusion.
+
+To represent the most significant variables, here we report the variable elimination plots:
+
+```{r}
+plot(backward_sel_lm, scale = 'r2')
+plot(backward_sel_lm, scale = 'bic')
+plot(backward_sel_lm, scale = 'Cp')
+```
+
+Based on the regsubsets plot, we reach the same conclusion as before. Therefore, we will proceed with removing the variables "Population" and "Total.expenditure" from our model. After removing these variables, we will retrain the multiple linear regressor using the updated set of features.
+
+
+```{r}
+cols_to_remove <- c("Population", "Total.expenditure")
+X_colnames_reduced_featureSel <- X_colnames_reduced[!(X_colnames_reduced %in% cols_to_remove)]
+
+featureSel_lm <- lm(train[,Y_colname] ~ ., data = train[, X_colnames_reduced_featureSel])
+summary(featureSel_lm)
+```
+The variance explained by the model is 83.33%, which is nearly identical to the previous result (83.34%) achieved with the full model that included all variables except those displaying multicollinearity issues.
+
+```{r}
+hist(featureSel_lm$residuals)
+```
+The histogram of the residuals exhibits a pattern that closely resembles a normal distribution. However, let's also check the QQ plot.
+
+```{r}
+plot(featureSel_lm, which = 2)
+```
+We can observe that the distribution has "fat" tails - both the ends of the Q-Q plot deviate from the straight line and its center follows a straight line. We refer to this as positive kurtosis (a measure of “Tailedness”).
+
+Shapiro Test
+
+```{r}
+shapiro.test(residuals(featureSel_lm))
+```
+In the context of the Shapiro-Wilk test, the null hypothesis is that the data is normally distributed. Since the p-value is significantly small (2.916e-11 << 0.05), it suggests strong evidence to reject the null hypothesis. Therefore, based on these results, it can be inferred that the residuals do not follow a normal distribution.
+
+
+#### Data Transformation
+
+To transform the data, we will apply the log transformation. Since there are 0s present in the data, we will use the formula log(1+x) to handle these values appropriately. We will only consider the variables that were selected earlier using multicollinearity check and feature selection. Initially, we exclude the binary variable "Status" when computing the log transformation. However, we will add it back later to enhance the linear model.
+
+Additionally, we attempted using the square root transformation but did not observe any significant improvement in the model's performance.
+
+
+```{r}
+X_colnames_reduced_featureSel_noStatus <- X_colnames_reduced_featureSel[!X_colnames_reduced_featureSel %in% "Status"]
+
+train_log <- train[, c(X_colnames_reduced_featureSel_noStatus, "Life.expectancy")]
+train_log <- log1p(train_log) # sqrt
+train_log$Status <- train$Status
+
+log_featureSel_lm <- lm(Life.expectancy ~ ., data = train_log)
+summary(log_featureSel_lm)
+```
+```{r}
+hist(log_featureSel_lm$residuals)
+```
+
+
+
+```{r}
+shapiro.test(residuals(log_featureSel_lm))
+```
+From the analysis of the histogram of the residuals and the results of the Shapiro-Wilk test, it can be concluded that the data transformation did not effectively address the issue of non-normality in the residuals. The residuals continue to deviate from the assumption of normality.
+
+
+### Ridge regression
+
+For the Ridge regression, it is necessary to standardize data. However, we already did this step.
+
+```{r, echo=FALSE}
+prepare_ridge_lasso <- function(X, Y, alpha){
+  grid <- 10^seq(10, -2, length=100)
+
+  model <- glmnet(X, Y, alpha = alpha, standardize = F)
+  # alpha = 0 for Ridge Regression
+  # alpha = 1 for Lasso Regression
+  plot(model, label=TRUE)
+
+  set.seed(1)
+  cv.out <- cv.glmnet(X, Y, alpha = alpha, nfold=10, type.measure = "mse") # Add lambda = grid,
+  
+  plot(cv.out)
+  
+  i.bestlam <- which.min(cv.out$cvm)
+  bestlam <- cv.out$lambda[i.bestlam]
+  cat('Best lambda:', bestlam, '\n')
+  
+  return(list('model' = model, 'lambda' = bestlam))
+}
+
+```
+
+```{r, warning=FALSE}
+train$Status  <- as.numeric(train$Status) - 1
+X = as.matrix(train[, X_colnames_reduced_featureSel])
+Y = as.matrix(train[, Y_colname])
+
+ridge_res = prepare_ridge_lasso(X = X,
+                                Y = Y,
+                                alpha = 0  # Ridge
+                                )
+```
+```{r}
+ridge_model <- ridge_res$model
+ridge_lambda <- ridge_res$lambda
+test$Status  <- as.numeric(test$Status) - 1
+ridge_pred <- predict(ridge_model,
+                      s = ridge_lambda,
+                      newx = as.matrix(test[, X_colnames_reduced_featureSel])
+                      )
+mean((ridge_pred - test$Life.expectancy)^2)
+```
+
+The value of best lambda is equal to 0.7588397
+MSE with the best lambda: 28.65004
+
+### Lasso regression
+
+```{r, warning=FALSE}
+lasso_res = prepare_ridge_lasso(X = X,
+                                Y = Y,
+                                alpha = 1  # Lasso
+                                )
+```
+```{r}
+lasso_model <- lasso_res$model
+lasso_lambda <- lasso_res$lambda
+lasso_pred <- predict(lasso_model,
+                      s = lasso_lambda,
+                      newx = as.matrix(test[, X_colnames_reduced_featureSel])
+                      )
+mean((lasso_pred - test$Life.expectancy)^2)
+```
+
+The value of best lambda is equal to: 0.02161203
+MSE with the best lambda: 22.82819
+
+
+We can see that the value of MSE of the lasso model is better than the ridge regularization model. So, we can conclude that the model with the L1 regularization term has slightly better predicting capabilities.
+
+
+### Homoscedasticity
+
+```{r}
+bptest(featureSel_lm)
+```
+```{r}
+ols_test_breusch_pagan(featureSel_lm)
+```
+Using 2 different function to test the homoscedasticity, we still get conclusion that the residuals variance is not constant.
+
+
+The linear model appears to be suitable for predicting Life.expectancy based on the Adj. R-Squared value. It successfully passed 2 out of 4 Assumption Checks, namely the Multicollinearity and Linearity Test, although it did not meet the criteria for Normality and Homoscedasticity.
+
+The Linear Model can effectively capture the linear relationship between Life.expectancy and the chosen independent variables. Nevertheless, it's crucial to acknowledge that this model is particularly sensitive to outliers, which were prevalent in the initial dataset.
+
+
+
+# TODO: Add comparison of models
+
+- Bar graph for different statistics of models and a table summary
+
+# TODO: Add best model summary
+- Discuss the results obtained from the summary (check Anna B.'s analysis)
+- Discuss whether the assumption checks are met
+
+
 
 
 
