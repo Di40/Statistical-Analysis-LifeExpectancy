@@ -64,7 +64,8 @@ We start our project by loading the dataset from the local drive to a dataframe.
 
 ```{r, echo=FALSE}
 tryCatch({
-  LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
+  # LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
+  LifeExp <- read.csv("C:/Users/marij/Desktop/Statistical-Analysis-LifeExpectancy/LifeExpectancyData.csv")
   print("Dataset loaded.")
 }, error = function(e) {
   print(paste("An error occurred while loading the dataset:", conditionMessage(e)))
@@ -331,8 +332,6 @@ By examining these plots, we can visually inspect the data and determine if ther
 ToDo: Improve the plots here. Idea: place the boxplot above/bellow the histogram - combo plot.
 
 ```{r}
-# Layout to split the screen
-# Draw the boxplot and the histogram 
 cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
 num_vars <- length(cont_vars)
 num_rows <- ceiling(sqrt(num_vars))
@@ -355,10 +354,206 @@ for (i in 1:num_vars) {
   
   hist(LifeExp[, col], col = rgb(0.2, 0.8, 0.5, 0.5), main = paste(col), xlab = "")
 }
+```
+```{r,echo = FALSE, message=FALSE}
+
+p1 <- ggplot(LifeExp, aes(x=Life.expectancy)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b1 <- ggplot(LifeExp, aes(x=Life.expectancy)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Life Expectancy")
+
+p2 <- ggplot(LifeExp, aes(x=Adult.Mortality)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b2 <- ggplot(LifeExp, aes(x=Adult.Mortality)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Adult Mortality")
+
+p3 <- ggplot(LifeExp, aes(x=infant.deaths)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b3 <- ggplot(LifeExp, aes(x=infant.deaths)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Infant Deaths")
+
+p4 <- ggplot(LifeExp, aes(x=Alcohol)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b4 <- ggplot(LifeExp, aes(x=Alcohol)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Alcohol")
+
+p5 <- ggplot(LifeExp, aes(x=percentage.expenditure)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b5 <- ggplot(LifeExp, aes(x=percentage.expenditure)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Percentage Expenditure")
+
+p6 <- ggplot(LifeExp, aes(x=Hepatitis.B)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b6 <- ggplot(LifeExp, aes(x=Hepatitis.B)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Hepatitis.B")
+
+p7 <- ggplot(LifeExp, aes(x=Measles)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b7 <- ggplot(LifeExp, aes(x=Measles)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Measles")
+
+p8 <- ggplot(LifeExp, aes(x=Schooling)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b8 <- ggplot(LifeExp, aes(x=Schooling)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Schooling")
+
+p9 <- ggplot(LifeExp, aes(x=under.five.deaths)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b9 <- ggplot(LifeExp, aes(x=under.five.deaths)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("under five deaths")
+
+p10 <- ggplot(LifeExp, aes(x=Polio)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b10 <- ggplot(LifeExp, aes(x=Polio)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Polio")
+
+p11 <- ggplot(LifeExp, aes(x=Total.expenditure)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b11 <- ggplot(LifeExp, aes(x=Total.expenditure)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Total.expenditure")
+
+p12 <- ggplot(LifeExp, aes(x=Diphtheria)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b12 <- ggplot(LifeExp, aes(x=Diphtheria)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Diphtheria")
+
+p13 <- ggplot(LifeExp, aes(x=HIV.AIDS)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b13 <- ggplot(LifeExp, aes(x=HIV.AIDS)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("HIV / AIDS")
+
+p14 <- ggplot(LifeExp, aes(x=GDP)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b14 <- ggplot(LifeExp, aes(x=GDP)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("GDP")
+
+p15 <- ggplot(LifeExp, aes(x=Population)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b15 <- ggplot(LifeExp, aes(x=Population)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Population")
+
+p16 <- ggplot(LifeExp, aes(x=thinness.10.19.years)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b16 <- ggplot(LifeExp, aes(x=thinness.10.19.years)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("thinness.10.19.years")
+
+p17 <- ggplot(LifeExp, aes(x=thinness.5.9.years)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b17 <- ggplot(LifeExp, aes(x=thinness.5.9.years)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("thinness.5.9.years")
+
+p18 <- ggplot(LifeExp, aes(x=Income.composition.of.resources)) +
+geom_histogram(aes(y = ..density..),
+colour = 1, fill = "white") +
+geom_density(lwd = 1, colour = 2,
+fill = 2, alpha = 0.25)
+
+b18 <- ggplot(LifeExp, aes(x=Income.composition.of.resources)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Income per resources")
+
+
+
+grid.arrange(p1, b1, p2, b2, p3, b3, p4, b4, p5, b5, p6, b6,p7, b7, p8, b8)
+grid.arrange(p9, b9,p10, b10, p11, b11, p12, b12, p14, b14,p15, b15, p17, b17, p18, b18)
+
+
 
 ```
 
 Visually inspecting the data, it is evident that there are several outliers present in the variables, including the target variable (life expectancy). To statistically identify outliers, Tukey's method can be applied. This method defines outliers as values that lie outside 1.5 times the interquartile range (IQR). By calculating the quartiles and IQR for each variable, the upper and lower bounds can be determined, and any values outside these bounds can be classified as outliers.
+
+```{r}
+LifeExp_old <- LifeExp
+
+```
+
+
 
 ```{r}
 cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
@@ -377,7 +572,6 @@ outlier_percent <- outlier_counts / nrow(LifeExp) * 100
 
 outliers_df <- data.frame(OutlierCount = outlier_counts, OutlierPercent = outlier_percent)
 kable(outliers_df, format = "markdown")
-
 ```
 
 There seem to be a considerable number of outliers present in this dataset. Now that they have been identified, a question arises: What course of action should be taken regarding them?
@@ -401,6 +595,8 @@ There are several approaches to handling outliers in a dataset, and the typical 
 
 Given that each variable in the dataset exhibits a unique number of outliers and these outliers are distributed on different sides of the data, the most suitable approach would likely involve Winsorizing (limiting) the values for each variable individually until no outliers remain. The provided function bellow enables this process by iterating through each variable and allowing the specification of lower and/or upper limits for Winsorization. By default, the function generates two boxplots side by side for each variable, depicting the original data and the Winsorized data, respectively. Once a satisfactory limit is determined through visual analysis, the Winsorized data is saved in the wins_dict dictionary for convenient future access.
 
+
+
 ```{r}
 test_wins <- function(col, lower_limit = 0, upper_limit = 0, show_plot = TRUE) {
   LifeExp_original <- LifeExp[[col]]
@@ -419,7 +615,7 @@ test_wins <- function(col, lower_limit = 0, upper_limit = 0, show_plot = TRUE) {
 
 test_wins(cont_vars[1], lower_limit = 0.01, show_plot = FALSE)
 test_wins(cont_vars[2], upper_limit = 0.04, show_plot = FALSE)
-test_wins(cont_vars[3], upper_limit = 0.05, show_plot = FALSE)
+test_wins(cont_vars[3], upper_limit = 0.05, show_plot = TRUE)
 test_wins(cont_vars[4], upper_limit = 0.0025, show_plot = FALSE)
 test_wins(cont_vars[5], upper_limit = 0.135, show_plot = FALSE)
 test_wins(cont_vars[6], lower_limit = 0.1, show_plot = FALSE)
@@ -435,34 +631,229 @@ test_wins(cont_vars[15], upper_limit = 0.035, show_plot = FALSE)
 test_wins(cont_vars[16], upper_limit = 0.035, show_plot = FALSE)
 test_wins(cont_vars[17], lower_limit = 0.05, show_plot = FALSE)
 test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = FALSE)
+
 ```
 
-(ToDo: Create prettier grahs)
+(ToDo: Create prettier graphs)
 
 ```{r}
-# Layout to split the screen
-# Draw the boxplot and the histogram 
-cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
-num_vars <- length(cont_vars)
-num_rows <- ceiling(2)
-num_cols <- ceiling(num_vars / num_rows)
-
-par(oma = c(0, 0, 0, 0))
-
-par(mfrow = c(num_rows, num_cols))
-
-for (i in 1:num_vars) {
-  col <- cont_vars[i]
-  
-  # Reduce the inner margins to make the plots larger
-  par(mar = c(2, 2, 1, 1))
-  
-  boxplot(LifeExp[, col], col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
-  
-  # Increase the inner margins for the histogram to make it taller
-  par(mar = c(4, 2, 1, 1))
-}
+# cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
+# num_vars <- length(cont_vars)
+# num_rows <- ceiling(2)
+# num_cols <- ceiling(num_vars / num_rows)
+# 
+# par(oma = c(0, 0, 0, 0))
+# 
+# par(mfrow = c(num_rows, num_cols))
+# 
+# for (i in 1:num_vars) {
+#   col <- cont_vars[i]
+#   
+#   # Reduce the inner margins to make the plots larger
+#   par(mar = c(2, 2, 1, 1))
+#   
+#   boxplot(LifeExp[, col], col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
+#   
+#   # Increase the inner margins for the histogram to make it taller
+#   par(mar = c(4, 2, 1, 1))
+# }
 ```
+```{r}
+# cont_vars <- colnames(LifeExp_old)[4:length(colnames(LifeExp_old))]
+# num_vars <- length(cont_vars)
+# num_rows <- ceiling(2)
+# num_cols <- ceiling(num_vars / num_rows)
+# 
+# par(oma = c(0, 0, 0, 0))
+# 
+# par(mfrow = c(num_rows, num_cols))
+# 
+# for (i in 1:num_vars) {
+#   col <- cont_vars[i]
+#   
+#   # Reduce the inner margins to make the plots larger
+#   par(mar = c(2, 2, 1, 1))
+#   
+#   boxplot(LifeExp_old[, col], col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
+#   
+#   # Increase the inner margins for the histogram to make it taller
+#   par(mar = c(4, 2, 1, 1))
+# }
+```
+
+```{r,echo = FALSE, message=FALSE}
+
+
+b1 <- ggplot(LifeExp, aes(x=Life.expectancy)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Life Expectancy")
+
+b1_old <- ggplot(LifeExp_old, aes(x=Life.expectancy)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Life Expectancy")
+
+b2 <- ggplot(LifeExp, aes(x=Adult.Mortality)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Adult Mortality")
+
+b2_old <- ggplot(LifeExp_old, aes(x=Adult.Mortality)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Adult Mortality")
+
+b3 <- ggplot(LifeExp, aes(x=infant.deaths)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Infant Deaths")
+
+b3_old <- ggplot(LifeExp_old, aes(x=infant.deaths)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Infant Deaths")
+
+b4 <- ggplot(LifeExp, aes(x=Alcohol)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Alcohol")
+
+b4_old <- ggplot(LifeExp_old, aes(x=Alcohol)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Alcohol")
+
+b5 <- ggplot(LifeExp, aes(x=percentage.expenditure)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Percentage Expenditure")
+
+b5_old <- ggplot(LifeExp_old, aes(x=percentage.expenditure)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Percentage Expenditure")
+
+b6 <- ggplot(LifeExp, aes(x=Hepatitis.B)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Hepatitis.B")
+
+b6_old <- ggplot(LifeExp_old, aes(x=Hepatitis.B)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Hepatitis.B")
+
+b7 <- ggplot(LifeExp, aes(x=Measles)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Measles")
+
+b7_old <- ggplot(LifeExp_old, aes(x=Measles)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Measles")
+
+b8 <- ggplot(LifeExp, aes(x=Schooling)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Schooling")
+
+b8_old <- ggplot(LifeExp_old, aes(x=Schooling)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Schooling")
+
+b9 <- ggplot(LifeExp, aes(x=under.five.deaths)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("under five deaths")
+
+b9_old <- ggplot(LifeExp_old, aes(x=under.five.deaths)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("under five deaths")
+
+b10 <- ggplot(LifeExp, aes(x=Polio)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Polio")
+
+b10_old <- ggplot(LifeExp_old, aes(x=Polio)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Polio")
+
+
+b11 <- ggplot(LifeExp, aes(x=Total.expenditure)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Total.expenditure")
+
+b11_old <- ggplot(LifeExp_old, aes(x=Total.expenditure)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Total.expenditure")
+
+b12 <- ggplot(LifeExp, aes(x=Diphtheria)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Diphtheria")
+
+b12_old <- ggplot(LifeExp_old, aes(x=Diphtheria)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Diphtheria")
+
+
+b13 <- ggplot(LifeExp, aes(x=HIV.AIDS)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("HIV / AIDS")
+
+b13_old <- ggplot(LifeExp_old, aes(x=HIV.AIDS)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("HIV / AIDS")
+
+
+b14 <- ggplot(LifeExp, aes(x=GDP)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("GDP")
+
+b14_old <- ggplot(LifeExp_old, aes(x=GDP)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("GDP")
+
+
+b15 <- ggplot(LifeExp, aes(x=Population)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Population")
+
+b15_old <- ggplot(LifeExp_old, aes(x=Population)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Population")
+
+
+b16 <- ggplot(LifeExp, aes(x=thinness.10.19.years)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("thinness.10.19.years")
+
+b16_old <- ggplot(LifeExp_old, aes(x=thinness.10.19.years)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("thinness.10.19.years")
+
+
+b17 <- ggplot(LifeExp, aes(x=thinness.5.9.years)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("thinness.5.9.years")
+
+b17_old <- ggplot(LifeExp_old, aes(x=thinness.5.9.years)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("thinness.5.9.years")
+
+
+b18 <- ggplot(LifeExp, aes(x=Income.composition.of.resources)) +
+geom_boxplot(fill=2, alpha=0.2) +
+xlab("Income per resources")
+
+b18_old <- ggplot(LifeExp_old, aes(x=Income.composition.of.resources)) +
+geom_boxplot(fill=5, alpha=0.2) +
+xlab("Income per resources")
+
+
+
+grid.arrange(b1_old, b1,b3_old, b3, b14_old, b14, b15_old, b15, ncol = 2)
+
+
+
+```
+Let's also compare the before and after distributions of some of our variables
+
+```{r}
+p1 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = Life.expectancy), color = 5, lwd = 1) +
+  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, lwd = 1) +
+  xlab("Infant Deaths Winsorization")
+
+# Print the plot
+print(p1)
+```
+
 
 
 ## Exploratory Data Analysis
@@ -474,7 +865,6 @@ library(rcompanion)
 par(mfrow=c(2,2))
 
 pnh_life_exp <- plotNormalHistogram(LifeExp$Life.expectancy, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Life Expectancy Histogram",length = 10000, linecol="#ffa600", lwd=3)
-
 
 pnh_alch <- plotNormalHistogram(LifeExp$Alcohol, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Alcohol Histogram",length = 10000, linecol="#ffa600", lwd=3)
 
@@ -489,6 +879,9 @@ pnh_popul <- plotNormalHistogram(LifeExp$Population, prob = FALSE, col="#B9D9EB"
 pnh_popul_log <- plotNormalHistogram(log(LifeExp$Population), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
 
 ```
+
+
+
 
 
 ### 1. Developing vs Developed Countries
@@ -1074,6 +1467,11 @@ The Linear Model can effectively capture the linear relationship between Life.ex
 - Discuss the results obtained from the summary (check Anna B.'s analysis)
 - Discuss whether the assumption checks are met
 
+```{r}
+ctable <- as.table(matrix(c(42, 6, 8, 28), nrow = 2, byrow = TRUE))
+fourfoldplot(ctable, color = c("#CC6666", "#99CC99"),
+             conf.level = 0, margin = 1, main = "Confusion Matrix")
+```
 
 
 
