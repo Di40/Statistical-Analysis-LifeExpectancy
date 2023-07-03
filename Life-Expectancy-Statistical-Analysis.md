@@ -137,7 +137,7 @@ Before we proceed with the missing values analysis, let's perform a couple of qu
 ```r
 colnames(LifeExp)[colnames(LifeExp) == "thinness..1.19.years"] <- "thinness.10.19.years"
 
-# Convert a character column to a factor column
+#Convert a character column to a factor column
 LifeExp$Year    <- as.factor(LifeExp$Year)
 LifeExp$Country <- as.factor(LifeExp$Country)
 LifeExp$Status  <- as.factor(LifeExp$Status)
@@ -705,45 +705,52 @@ test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = F
 # }
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-24-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-24-2.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+Let's also compare the before and after distributions of some of our variables
+
+
+```r
+p1 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = Life.expectancy), color = 5, lwd = 1) +
+  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, lwd = 1) +
+  xlab("Infant Deaths Winsorization")
+
+# Print the plot
+print(p1)
+```
+
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 
 
 ## Exploratory Data Analysis
 
-### Histogram visualization
 
 ```r
-library(rcompanion)
+#Histogram Visualizations
 
-par(mfrow=c(2,2))
-
-pnh_life_exp <- plotNormalHistogram(LifeExp$Life.expectancy, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Life Expectancy Histogram",length = 10000, linecol="#ffa600", lwd=3)
-
-pnh_alch <- plotNormalHistogram(LifeExp$Alcohol, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Alcohol Histogram",length = 10000, linecol="#ffa600", lwd=3)
-
-pnh_school <-plotNormalHistogram(LifeExp$Schooling, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Schooling",length = 10000, linecol="#ffa600", lwd=3)
-
-pnh_gdp <- plotNormalHistogram(LifeExp$GDP, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Histogram",length = 10000, linecol="#ffa600", lwd=3)
+# library(rcompanion)
+# 
+# par(mfrow=c(2,2))
+# 
+# pnh_life_exp <- plotNormalHistogram(LifeExp$Life.expectancy, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Life Expectancy Histogram",length = 10000, linecol="#ffa600", lwd=3)
+# 
+# pnh_alch <- plotNormalHistogram(LifeExp$Alcohol, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Alcohol Histogram",length = 10000, linecol="#ffa600", lwd=3)
+# 
+# pnh_school <-plotNormalHistogram(LifeExp$Schooling, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Schooling",length = 10000, linecol="#ffa600", lwd=3)
+# 
+# pnh_gdp <- plotNormalHistogram(LifeExp$GDP, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Histogram",length = 10000, linecol="#ffa600", lwd=3)
+# 
+# pnh_gdp_log <- plotNormalHistogram(log(LifeExp$GDP), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
+# 
+# pnh_popul <- plotNormalHistogram(LifeExp$Population, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Histogram",length = 10000, linecol="#ffa600", lwd=3)
+# 
+# pnh_popul_log <- plotNormalHistogram(log(LifeExp$Population), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
-
-```r
-pnh_gdp_log <- plotNormalHistogram(log(LifeExp$GDP), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
-
-pnh_popul <- plotNormalHistogram(LifeExp$Population, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Histogram",length = 10000, linecol="#ffa600", lwd=3)
-
-pnh_popul_log <- plotNormalHistogram(log(LifeExp$Population), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
-```
-
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-25-2.png)<!-- -->
 
 
-
-
-
-### 1. Developing vs Developed Countries
+### Q1. Does the sample gives enough evidence to say that Developed countries have more average life expectancy than Developing countries?
 
 ```r
 ggplot(LifeExp, aes(x = Status, fill = Status)) + 
@@ -754,7 +761,7 @@ ggplot(LifeExp, aes(x = Status, fill = Status)) +
         axis.text.y = element_text(size = 8), axis.title.y = element_text(size = 8))
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 
 
@@ -765,120 +772,180 @@ ggplot(LifeExp, aes(x=Life.expectancy, fill=Status)) +
   scale_fill_manual(values = c("#FFA600", "#A05195"))
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
-
-### 2.Correlation between Health expenditure and Life expectancy.
-
-Percentage Expenditure - Expenditure on health as a percentage of Gross Domestic Product per capita (%):
-This indicator calculates the proportion of total health expenditure in relation to the Gross Domestic Product (GDP) per capita. It measures the share of the country's economic output (GDP) that is spent on healthcare per person. It provides insights into the financial commitment to healthcare relative to the economic well-being of the population. Higher values indicate a larger proportion of GDP per capita allocated to healthcare, suggesting greater investment in the health sector.
-
-Total Expenditure - General government expenditure on health as a percentage of total government expenditure (%):
-This indicator focuses specifically on the proportion of government expenditure that is allocated to healthcare. It calculates the share of total government expenditure that is dedicated to healthcare services and programs. It helps assess the priority given to healthcare within the government's overall budget allocation. Higher values indicate a greater emphasis on healthcare within the government's expenditure decisions.
-
-The key distinction lies in the denominator used to calculate the proportions. Percentage expenditure considers the Gross Domestic Product per capita as the benchmark, while total expenditure focuses on the proportion of government expenditure dedicated to healthcare. Both indicators provide different perspectives on the allocation of resources to healthcare and can be used to evaluate financial commitments and priorities in the healthcare sector.
-
-
-```r
-life_expectancy_vs_percentage_expenditure <-  ggplot(LifeExp, aes(percentage.expenditure, Life.expectancy)) + 
-                                      geom_jitter(color = "yellow", alpha = 0.5) + theme_light()
-
-life_expectancy_vs_Total_expenditure  <- ggplot(LifeExp, aes(Total.expenditure, Life.expectancy)) +
-                                      geom_jitter(color = "purple", alpha = 0.5) + theme_light()
-
-p <- plot_grid(life_expectancy_vs_percentage_expenditure, life_expectancy_vs_Total_expenditure) 
-title <- ggdraw() + draw_label("Correlation between Health expenditure and Life expectancy", fontface='bold')
-plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
-```
-
 ![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
-We can see from the above graph that the Higher Life Expectancy is more concentrated when expenditure varies from 5k - 20k.
 
+Due to our lack of knowledge regarding the population variance, we will employ a two-sample T-Test instead of a two-sample Z-Test in order to assess the equality of the two means. Prior to conducting the T-Test, it is necessary to determine whether the variances of the two populations are equal. To accomplish this, we will employ an F-Test.
 
-### 3.Correlation between Health expenditure and Immunization.
+To start, we will filter and group the data by country, allowing us to calculate the average life expectancy for each country over the span of 16 years.
 
-
-```r
-life_expectancy_vs_Hepatitis_B <- ggplot(LifeExp, aes(Hepatitis.B, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
-
-life_expectancy_vs_Diphtheria  <- ggplot(LifeExp, aes(Diphtheria, Life.expectancy)) + geom_jitter(color = "orange", alpha = 0.5) + theme_light()
-                              
-life_expectancy_vs_Polio  <- ggplot(LifeExp, aes(Polio, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
-
-life_expectancy_vs_Measles  <- ggplot(LifeExp, aes(Measles, Life.expectancy)) + geom_jitter(color = "light green", alpha = 0.5) + theme_light()
-
-p <- plot_grid(life_expectancy_vs_Hepatitis_B, life_expectancy_vs_Diphtheria, life_expectancy_vs_Polio, life_expectancy_vs_Measles) 
-title <- ggdraw() + draw_label("Correlation between Immunizations and life expectancy", fontface='bold')
-plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
-```
-
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
-### 4. Life expectancy and Alcohol
-
-Developed countries tend to have higher levels of alcohol consumption compared to developing countries. This can be attributed to various factors such as higher income levels, greater access to alcohol, more established alcohol industries, and different cultural norms surrounding alcohol.
-Higher GDP at Developed countries can influence alcohol consumption patterns to some extent. As countries experience economic growth and an increase in GDP, there is often an associated rise in income levels and discretionary spending power. This can lead to increased alcohol consumption. 
 
 
 ```r
-ggplot(LifeExp, aes(x=Alcohol, fill=Status)) +
-    geom_density(alpha=.5) +
-    labs(title  = "Alcohol consumption by Status", x ="Alcohol", y="Density") +
-  scale_fill_manual(values = c("#FFA600", "#A05195"))
-```
+Developing_X <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (Status == "Developing"), FUN = mean)
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
+Developed_Y <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (Status == "Developed"), FUN = mean)
+```
 
 ```r
-ggplot(LifeExp, aes(x=log(GDP), fill=Status)) +
-    geom_density(alpha=.5) +
-    labs(title  = "GDP by Status", x ="GDP", y="Density") +
-  scale_fill_manual(values = c("#FFA600", "#A05195"))
+head(Developing_X,5)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
+<div class="kable-table">
 
+|Country             | Life.expectancy|
+|:-------------------|---------------:|
+|Afghanistan         |        58.19375|
+|Albania             |        75.15625|
+|Algeria             |        73.61875|
+|Angola              |        49.03750|
+|Antigua and Barbuda |        75.05625|
+
+</div>
 
 ```r
-life_expectancy_vs_Alcohol  <- ggplot(LifeExp, aes(Alcohol, Life.expectancy)) + geom_jitter(color = "#A05195", alpha = 0.5) + theme_light()
-life_expectancy_vs_Alcohol 
+head(Developed_Y,5)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+<div class="kable-table">
 
+|Country   | Life.expectancy|
+|:---------|---------------:|
+|Australia |        81.81250|
+|Austria   |        81.48125|
+|Belgium   |        80.68125|
+|Bulgaria  |        72.85000|
+|Croatia   |        76.11875|
 
-```r
-life_expectancy_vs_Alcohol  <- ggplot(LifeExp, aes(Schooling, Life.expectancy)) + geom_jitter(color = "#A05195", alpha = 0.5) + theme_light()
-life_expectancy_vs_Alcohol 
-```
+</div>
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
-
-
-### 5. Correlation between Life expectancy and GDP
-
-```r
-life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jitter(color = "lightblue", alpha = 0.5) + theme_light()
-life_expectancy_vs_GDP 
-```
-
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
-
-### 6. Correlation between Life expectancy Thinness
 
 
 ```r
-life_expectancy_vs_thin5_9  <- ggplot(LifeExp, aes(thinness.5.9.years, Life.expectancy)) + geom_jitter(color = "orange", alpha = 0.5) + theme_light()
-                              
-life_expectancy_vs_thin10_19 <- ggplot(LifeExp, aes(thinness.10.19.years, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
-
-m <- plot_grid(life_expectancy_vs_thin5_9, life_expectancy_vs_thin10_19) 
-title <- ggdraw() + draw_label("Correlation between Thinness and Life expectancy", fontface='bold')
-plot_grid(title, m, ncol=1, rel_heights=c(0.1, 1))
+var.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
+```
+## 
+## 	F test to compare two variances
+## 
+## data:  Developed_Y$Life.expectancy and Developing_X$Life.expectancy
+## F = 0.14793, num df = 31, denom df = 160, p-value = 4.472e-08
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  0.08968881 0.27049424
+## sample estimates:
+## ratio of variances 
+##          0.1479263
+```
+The observed p-value is less than alpha(0.05 by default). Hence we reject the null hypothesis and accept the alternate statement that the variance of two populations is not equal.
 
 
-### 7. Correlation between Life expectancy and Income composition of resources
+
+```r
+t.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy, alternative = "greater", var.equal = FALSE)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  Developed_Y$Life.expectancy and Developing_X$Life.expectancy
+## t = 13.541, df = 126.15, p-value < 2.2e-16
+## alternative hypothesis: true difference in means is greater than 0
+## 95 percent confidence interval:
+##  10.36548      Inf
+## sample estimates:
+## mean of x mean of y 
+##  79.19785  67.38706
+```
+The final conclusion is that the null hypothesis is rejected against the alternative hypothesis as the p-value<0.05. Hence we conclude that life expectancy in developed countries is more than that of developing countries with 95% confidence.
+
+### Q2 Using the sample, test whether schooling years (average) has a significant impact on life expectancy?
+
+Education creates awareness about healthy living. For example Vaccine hesitancy during this Covid-19 period, especially among the rural population, has highlighted the importance of education.
+
+We will be using the ANOVA test to test the significance of education on life expectancy. Here we will categorize countries into one of the three categories: ‘Low’ (≤8), ‘Medium’(>8 and ≤12), ‘High’ (>12) depending upon the country’s average schooling years.
+
+Firstly, we will group the data by country and find the average life expectancy and Schooling for each country over the 16 years.
+
+
+```r
+Schooling_X <- aggregate(cbind(Life.expectancy, Schooling) ~ Country, data = LifeExp, FUN = mean)
+
+head(Schooling_X,5)
+```
+
+<div class="kable-table">
+
+|Country             | Life.expectancy| Schooling|
+|:-------------------|---------------:|---------:|
+|Afghanistan         |        58.19375|   8.21250|
+|Albania             |        75.15625|  12.13750|
+|Algeria             |        73.61875|  12.71250|
+|Angola              |        49.03750|   8.06250|
+|Antigua and Barbuda |        75.05625|  10.68125|
+
+</div>
+
+```r
+x <- Schooling_X %>% filter(Schooling < 8.0)
+y <- Schooling_X %>% filter(Schooling > 8.0 & Schooling <= 12.0 )
+z <- Schooling_X %>% filter(Schooling < 12.0)
+
+y1 <- data.frame(Life.expectancy = x$Life.expectancy)
+y1$Education = 'Low'
+y2 <- data.frame(Life.expectancy = y$Life.expectancy)
+y2$Education = 'Middle'
+y3 <- data.frame(Life.expectancy = z$Life.expectancy)
+y3$Education = 'High'
+```
+
+```r
+Schooling_Y <- data.frame(rbind(y1,y2,y3))
+head(Schooling_Y,5)
+```
+
+<div class="kable-table">
+
+| Life.expectancy|Education |
+|---------------:|:---------|
+|        55.64375|Low       |
+|        55.53750|Low       |
+|        48.51250|Low       |
+|        50.38750|Low       |
+|        60.75625|Low       |
+
+</div>
+Let's apply the ANOVA test.
+
+
+```r
+Anova_Results <- aov(Life.expectancy ~ Education, data = Schooling_Y)
+summary(Anova_Results)
+```
+
+```
+##              Df Sum Sq Mean Sq F value Pr(>F)  
+## Education     2    391  195.33   2.977 0.0535 .
+## Residuals   176  11549   65.62                 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+Df (Degrees of Freedom): The "Education" factor has 2 degrees of freedom, indicating that there were two levels or groups within this factor.
+
+Sum Sq (Sum of Squares): The sum of squares for "Education" is 391. This value represents the variability in the response variable ("Education") explained by the factor "Education."
+
+Mean Sq (Mean Sum of Squares): The mean sum of squares for "Education" is 195.33. This value represents the average variability explained by the factor "Education" across the degrees of freedom.
+
+F value: The F value is a ratio of the variability between groups (mean sum of squares) to the variability within groups (residual mean sum of squares). In this case, the F value is 2.977.
+
+Pr(>F) (p-value): The p-value associated with the F value is 0.0535. This p-value indicates the probability of obtaining an F value as extreme as the one observed, assuming there is no effect of "Education." It represents the level of statistical significance.
+
+Interpretation:
+In this ANOVA summary, the p-value (Pr(>F)) is slightly above the commonly used threshold of 0.05 (significance level). Therefore, there is weak evidence to suggest that the "Education" factor has a statistically significant effect on the response variable. However, since the p-value is close to 0.05, it is on the borderline of significance. Further investigation or additional data may be needed to draw more conclusive results.
+
+
+### Q3 Check if countries that spend a higher proportion of their resources on human development have a higher life expectancy?
 
 The term "Income composition of resources" refers to a component of the Human Development Index (HDI), which is a measure used to assess the overall development and well-being of a country's population. The Income composition of resources specifically focuses on income-related indicators and their contribution to human development.
 
@@ -896,8 +963,364 @@ life_expectancy_vs_incomecomp <- ggplot(LifeExp, aes(Income.composition.of.resou
 life_expectancy_vs_incomecomp
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
-By this scatterplot we can see that The Income composition of resources and their contribution to human development positively influences the Life Expectancy.
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+By this scatterplot we can see that The Income composition of resources and their contribution to human development positively influences the Life Expectancy but let's see the correlation also with the Pearson correlation coefficient.
+
+
+```r
+in_comp_res <-aggregate(cbind(Life.expectancy, Income.composition.of.resources) ~ Country, data = LifeExp, FUN = mean)
+
+head(in_comp_res,5)
+```
+
+<div class="kable-table">
+
+|Country             | Life.expectancy| Income.composition.of.resources|
+|:-------------------|---------------:|-------------------------------:|
+|Afghanistan         |        58.19375|                        0.415375|
+|Albania             |        75.15625|                        0.709875|
+|Algeria             |        73.61875|                        0.694875|
+|Angola              |        49.03750|                        0.458375|
+|Antigua and Barbuda |        75.05625|                        0.597750|
+
+</div>
+
+```r
+ggscatter(in_comp_res, x = "Income.composition.of.resources", y = "Life.expectancy", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", xlab = "HDI (Income composition of resources)", ylab = "Life Expectancy")
+```
+
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
+
+```r
+cor.test(in_comp_res$Income.composition.of.resources,in_comp_res$Life.expectancy )
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  in_comp_res$Income.composition.of.resources and in_comp_res$Life.expectancy
+## t = 21.191, df = 191, p-value < 2.2e-16
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  0.7898063 0.8752980
+## sample estimates:
+##       cor 
+## 0.8376092
+```
+A correlation coefficient of 0.8376092 indicates a strong positive linear relationship between the variables being correlated, therfore the countries with higher income composition of resources for human development have better life expectancy. Also the regression line explains 82% of variance in the data. Thus countries should spend more on the human development to achieve higher life expectancy.
+
+### Q4 Italian Government has claimed that they have spent an average of around 8.41% of their total expenditure on health for the year 2000–2015. Can we test their claim?
+
+We will use a One-Sample t-test and not a One-sample Z-test to test the claim since we have no information about the population variance.
+
+Firstly, we will use a filter to obtain the data for ‘Italy’ and the Total.expenditure column as it denotes % of government expenditure on health out of total government expenditure.
+
+
+```r
+Italy_X <- LifeExp %>% filter (Country == "Italy")
+Italy_Y <- select(Italy_X,Total.expenditure)
+
+t.test(Italy_Y, mu = 8.41, alternative = "two.sided")
+```
+
+```
+## 
+## 	One Sample t-test
+## 
+## data:  Italy_Y
+## t = 1.5893, df = 15, p-value = 0.1328
+## alternative hypothesis: true mean is not equal to 8.41
+## 95 percent confidence interval:
+##  8.320883 9.021617
+## sample estimates:
+## mean of x 
+##   8.67125
+```
+We decided to also test India's claim that they have spent an average of around 5.2% of their total expenditure on health for the year 2000–2015.
+
+```r
+India_X <- LifeExp %>% filter (Country == "India")
+India_Y <- select(India_X,Total.expenditure)
+
+t.test(India_Y, mu = 5.2, alternative = "two.sided")
+```
+
+```
+## 
+## 	One Sample t-test
+## 
+## data:  India_Y
+## t = -3.881, df = 15, p-value = 0.001477
+## alternative hypothesis: true mean is not equal to 5.2
+## 95 percent confidence interval:
+##  4.160101 4.897399
+## sample estimates:
+## mean of x 
+##   4.52875
+```
+Since 5.2 doesn’t lie in the 95% confidence interval range [4.232587, 4.689913], we can say that the sample doesn’t give enough evidence to accept the claim made by the Indian Government. On the other hand Italy's claim of 8.4 lies in the 95% CI range of [8.320883 ,9.021617].
+
+### Q5 What are our oservations when comparing the proportions of the number of infant deaths and the number of under-five deaths.
+
+We will conduct a two-proportions z-test to compare the two independent proportions.
+
+
+```r
+Mort_X <- aggregate(cbind(Life.expectancy, infant.deaths, under.five.deaths) ~ Country, data = LifeExp, FUN = mean)
+
+head(Mort_X,5)
+```
+
+<div class="kable-table">
+
+|Country             | Life.expectancy| infant.deaths| under.five.deaths|
+|:-------------------|---------------:|-------------:|-----------------:|
+|Afghanistan         |        58.19375|      78.25000|         107.56250|
+|Albania             |        75.15625|      12.17719|           3.74031|
+|Algeria             |        73.61875|      20.31250|          23.50000|
+|Angola              |        49.03750|      83.22500|         125.87500|
+|Antigua and Barbuda |        75.05625|      42.47885|          57.22625|
+
+</div>
+infant_deaths column represents the number of infant deaths per 1000 population and similarly, under_five_deaths represents the number of under-five deaths per 1000 population. We have to use the average value of infant or under-five deaths of all the countries and take its ceiling value.
+
+```r
+mortx <- ceiling(mean(Mort_X$infant.deaths))
+morty <- ceiling(mean(Mort_X$under.five.deaths))
+argx <- c(mortx,morty)
+argy <- c(1000,1000)
+
+prop.test(argx,argy, correct = FALSE)
+```
+
+```
+## 
+## 	2-sample test for equality of proportions without continuity correction
+## 
+## data:  argx out of argy
+## X-squared = 1.8163, df = 1, p-value = 0.1778
+## alternative hypothesis: two.sided
+## 95 percent confidence interval:
+##  -0.026990111  0.004990111
+## sample estimates:
+## prop 1 prop 2 
+##  0.029  0.040
+```
+Since the p- value is greater than 0.05, we see no significant difference in the two independent proportions.
+
+
+### Q6 What is the correlation of Life expectancy with Alcohol drinking habits ?
+
+Let's use the Person correlation test.
+
+
+```r
+Alc_X <- aggregate(cbind(Life.expectancy, Alcohol) ~ Country, data = LifeExp, FUN = mean) 
+
+head(Alc_X,5)
+```
+
+<div class="kable-table">
+
+|Country             | Life.expectancy|   Alcohol|
+|:-------------------|---------------:|---------:|
+|Afghanistan         |        58.19375| 0.0143750|
+|Albania             |        75.15625| 4.8487500|
+|Algeria             |        73.61875| 0.7117708|
+|Angola              |        49.03750| 5.7123958|
+|Antigua and Barbuda |        75.05625| 7.7830208|
+
+</div>
+
+
+```r
+ggscatter(Alc_X, x = "Alcohol", y = "Life.expectancy", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", xlab = "Alcohol consumption (in litres of pure alcohol", ylab = "Life Expectancy")
+```
+
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
+
+
+```r
+cor.test(Alc_X$Alcohol, Alc_X$Life.expectancy)
+```
+
+```
+## 
+## 	Pearson's product-moment correlation
+## 
+## data:  Alc_X$Alcohol and Alc_X$Life.expectancy
+## t = 6.6274, df = 191, p-value = 3.397e-10
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  0.3100919 0.5406181
+## sample estimates:
+##       cor 
+## 0.4323943
+```
+the results indicate a statistically significant moderate positive linear relationship (correlation coefficient = 0.4323943) between alcohol consumption and life expectancy. This suggests that higher levels of alcohol consumption are associated with increased life expectancy, within the range of data analyzed. However,before jumping to conclusions we need to also take in consideration other factors.
+
+Developed countries tend to have higher levels of alcohol consumption compared to developing countries. This can be attributed to various factors such as higher income levels, greater access to alcohol, more established alcohol industries, and different cultural norms surrounding alcohol. This was also our conclusion from our previous analysis where we concluded that life expectancy in developed countries is more than that of developing countries.
+
+Higher GDP at Developed countries can influence alcohol consumption patterns to some extent. As countries experience economic growth and an increase in GDP, there is often an associated rise in income levels and discretionary spending power. This can lead to increased alcohol consumption. 
+
+
+
+```r
+ggplot(LifeExp, aes(x=Alcohol, fill=Status)) +
+    geom_density(alpha=.5) +
+    labs(title  = "Alcohol consumption by Status", x ="Alcohol", y="Density") +
+  scale_fill_manual(values = c("#FFA600", "#A05195"))
+```
+
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
+
+```r
+ggplot(LifeExp, aes(x=log(GDP), fill=Status)) +
+    geom_density(alpha=.5) +
+    labs(title  = "GDP by Status", x ="GDP", y="Density") +
+  scale_fill_manual(values = c("#FFA600", "#A05195"))
+```
+
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-49-1.png)<!-- -->
+
+
+```r
+life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jitter(color = "lightblue", alpha = 0.5) + theme_light()
+life_expectancy_vs_GDP 
+```
+
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-50-1.png)<!-- -->
+
+
+### Q7 Correlation between Life Expectancy and Immunization.
+
+In Covid-19 times we all have seen the importance of immunization against the virus to increase life expectancy.Can we show that immunization against Polio and Diphtheria has a significant effect on life expectancy?
+
+We will use a two-way ANOVA test. Here we will divide the countries into two categories for both Polio and Diphtheria. Countries having values of % immunization coverage for one-year-old greater than the median value will get category ‘High’ else ‘Low’.
+
+
+```r
+Immun_X <- aggregate(cbind(Life.expectancy, Polio, Diphtheria) ~ Country, data = LifeExp, FUN = mean)
+
+head(Immun_X,5)
+```
+
+<div class="kable-table">
+
+|Country             | Life.expectancy|   Polio| Diphtheria|
+|:-------------------|---------------:|-------:|----------:|
+|Afghanistan         |        58.19375| 58.6875|    59.8750|
+|Albania             |        75.15625| 98.1250|    98.0625|
+|Algeria             |        73.61875| 91.7500|    91.8750|
+|Angola              |        49.03750| 61.4375|    61.6250|
+|Antigua and Barbuda |        75.05625| 96.9375|    98.3125|
+
+</div>
+
+```r
+xx_1 <- Immun_X %>% filter(Polio <= 85)
+xx_2 <- Immun_X %>% filter(Polio > 85)
+yy_1 <- Immun_X %>% filter(Diphtheria <= 85)
+yy_2 <- Immun_X %>% filter(Diphtheria > 85)
+
+zz1 <- data.frame(Life.expectancy = xx_1$Life.expectancy, Country = xx_1$Country)
+zz1$Polio = 'Low'
+zz2 <- data.frame(Life.expectancy = xx_2$Life.expectancy, Country = xx_2$Country)
+zz2$Polio = 'High'
+zz3 <- data.frame(Life.expectancy = yy_1$Life.expectancy, Country = yy_1$Country)
+zz3$Diphtheria = 'Low'
+zz4 <- data.frame(Life.expectancy = yy_2$Life.expectancy, Country = yy_2$Country)
+zz4$Diphtheria = 'High'
+```
+
+```r
+Immun_Polio <- data.frame(rbind(zz1,zz2))
+head(Immun_Polio,5)
+```
+
+<div class="kable-table">
+
+| Life.expectancy|Country                          |Polio |
+|---------------:|:--------------------------------|:-----|
+|        58.19375|Afghanistan                      |Low   |
+|        49.03750|Angola                           |Low   |
+|        70.73125|Azerbaijan                       |Low   |
+|        57.56875|Benin                            |Low   |
+|        67.70625|Bolivia (Plurinational State of) |Low   |
+
+</div>
+
+
+```r
+Immun_Diphtheria <- data.frame(rbind(zz3,zz4))
+head(Immun_Diphtheria,5)
+```
+
+<div class="kable-table">
+
+| Life.expectancy|Country                |Diphtheria |
+|---------------:|:----------------------|:----------|
+|        58.19375|Afghanistan            |Low        |
+|        49.03750|Angola                 |Low        |
+|        70.73125|Azerbaijan             |Low        |
+|        57.56875|Benin                  |Low        |
+|        75.96875|Bosnia and Herzegovina |Low        |
+
+</div>
+
+
+```r
+Immun_Y <- merge(Immun_Polio, Immun_Diphtheria, by = "Country")
+head(Immun_Y,5)
+```
+
+<div class="kable-table">
+
+|Country             | Life.expectancy.x|Polio | Life.expectancy.y|Diphtheria |
+|:-------------------|-----------------:|:-----|-----------------:|:----------|
+|Afghanistan         |          58.19375|Low   |          58.19375|Low        |
+|Albania             |          75.15625|High  |          75.15625|High       |
+|Algeria             |          73.61875|High  |          73.61875|High       |
+|Angola              |          49.03750|Low   |          49.03750|Low        |
+|Antigua and Barbuda |          75.05625|High  |          75.05625|High       |
+
+</div>
+
+
+```r
+Anova_Results_1 <- aov(Life.expectancy.x ~ Polio + Diphtheria, data = Immun_Y)
+summary(Anova_Results_1)
+```
+
+```
+##              Df Sum Sq Mean Sq F value   Pr(>F)    
+## Polio         1   5597    5597  117.46  < 2e-16 ***
+## Diphtheria    1    631     631   13.25 0.000352 ***
+## Residuals   190   9053      48                     
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+P-value for both Polio and Diphtheria immunization coverage for one-year old is less than 0.05, hence we can say that immunization has a significant impact on the life expectancy.
+
+
+
+```r
+life_expectancy_vs_Hepatitis_B <- ggplot(LifeExp, aes(Hepatitis.B, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
+
+life_expectancy_vs_Diphtheria  <- ggplot(LifeExp, aes(Diphtheria, Life.expectancy)) + geom_jitter(color = "orange", alpha = 0.5) + theme_light()
+                              
+life_expectancy_vs_Polio  <- ggplot(LifeExp, aes(Polio, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
+
+life_expectancy_vs_Measles  <- ggplot(LifeExp, aes(Measles, Life.expectancy)) + geom_jitter(color = "light green", alpha = 0.5) + theme_light()
+
+p <- plot_grid(life_expectancy_vs_Hepatitis_B, life_expectancy_vs_Diphtheria, life_expectancy_vs_Polio, life_expectancy_vs_Measles) 
+title <- ggdraw() + draw_label("Correlation between Immunizations and life expectancy", fontface='bold')
+plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+```
+
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
+
 
 ## Constructing Correlation Matrix
 
@@ -911,7 +1334,7 @@ cor_matrix <- cor(numeric_vars)
 corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
 
 ```r
 # Adjust the text size
@@ -923,7 +1346,7 @@ corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
 cor_matrix %>% corrr::network_plot(min_cor = .3)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-59-1.png)<!-- -->
 
 
 
@@ -1053,7 +1476,7 @@ ggplot(train, aes(x = Income.composition.of.resources, y = Life.expectancy)) +
               color = "red", linetype = "solid", linewidth = 1.2)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-63-1.png)<!-- -->
 That’s not the whole picture though. Residuals could show how poorly a model represents data. Residuals are leftover of the outcome variable after fitting a model (predictors) to data, and they could reveal patterns in the data unexplained by the fitted model. Using this information, not only we can check if linear regression assumptions are met, but we can improve our model in an exploratory way.
 
 Let’s now have a look at the *diagnostic plots*, in order to check whether Linear regression assumptions are met. These assumptions include:
@@ -1078,7 +1501,7 @@ par(mfrow = c(2, 2))
 plot(simple_lm)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-64-1.png)<!-- -->
 *Residuals vs Fitted*
 
 This plot shows if residuals have non-linear patterns. There could be a non-linear relationship between predictor variables and the outcome variable, and the pattern could show up in this plot if the model doesn’t capture the non-linear relationship. In our case, we find almost equally spread residuals around a horizontal line without distinct patterns. So, this is a good indication that we don’t have non-linear relationships.
@@ -1270,7 +1693,7 @@ par(mfrow=c(2,2))
 plot(full_lm_low_vif)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
 
 Fitted vs Residual graph\
 The red line is very close to zero and the spread of the residuals is approximately the same across the x axis, so we have no discernible non-linear trends or indications of non-constant variance.
@@ -1302,7 +1725,7 @@ Both feature selection techniques yielded the same results. So, for simplicity, 
 plot_subsets_summary(backward_sel_lm)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-51-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-72-1.png)<!-- -->
 
 Based on the observed graphs, it is clear that different statistical measures, such as Cp, BIC, and Adjusted R-squared, produce varying results in the feature selection process. The use of Adjusted R-squared led to a model with one less variable compared to the original model. Cp resulted in the removal of two variables, while BIC suggested eliminating four variables from the model. Notably, Cp and AIC are equivalent and select the same model, hence we have focused on presenting the results based on Cp.
 
@@ -1364,19 +1787,19 @@ To represent the most significant variables, here we report the variable elimina
 plot(backward_sel_lm, scale = 'r2')
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-53-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-74-1.png)<!-- -->
 
 ```r
 plot(backward_sel_lm, scale = 'bic')
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-53-2.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-74-2.png)<!-- -->
 
 ```r
 plot(backward_sel_lm, scale = 'Cp')
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-53-3.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-74-3.png)<!-- -->
 
 Based on the regsubsets plot, we reach the same conclusion as before. Therefore, we will proceed with removing the variables "Population" and "Total.expenditure" from our model. After removing these variables, we will retrain the multiple linear regressor using the updated set of features.
 
@@ -1427,7 +1850,7 @@ The variance explained by the model is 83.33%, which is nearly identical to the 
 hist(featureSel_lm$residuals)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-55-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-76-1.png)<!-- -->
 The histogram of the residuals exhibits a pattern that closely resembles a normal distribution. However, let's also check the QQ plot.
 
 
@@ -1435,7 +1858,7 @@ The histogram of the residuals exhibits a pattern that closely resembles a norma
 plot(featureSel_lm, which = 2)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-56-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-77-1.png)<!-- -->
 We can observe that the distribution has "fat" tails - both the ends of the Q-Q plot deviate from the straight line and its center follows a straight line. We refer to this as positive kurtosis (a measure of “Tailedness”).
 
 Shapiro Test
@@ -1509,7 +1932,7 @@ summary(log_featureSel_lm)
 hist(log_featureSel_lm$residuals)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-59-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-80-1.png)<!-- -->
 
 
 
@@ -1546,7 +1969,7 @@ ridge_res = prepare_ridge_lasso(X = X,
                                 )
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-62-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-62-2.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-83-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-83-2.png)<!-- -->
 
 ```
 ## Best lambda: 0.7588397
@@ -1580,7 +2003,7 @@ lasso_res = prepare_ridge_lasso(X = X,
                                 )
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-64-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-64-2.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-85-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-85-2.png)<!-- -->
 
 ```
 ## Best lambda: 0.02161203
@@ -1668,7 +2091,7 @@ fourfoldplot(ctable, color = c("#CC6666", "#99CC99"),
              conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-68-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-89-1.png)<!-- -->
 
 
 
