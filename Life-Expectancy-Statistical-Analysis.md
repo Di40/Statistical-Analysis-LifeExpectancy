@@ -633,12 +633,7 @@ test_wins <- function(col, lower_limit = 0, upper_limit = 0, show_plot = TRUE) {
 
 test_wins(cont_vars[1], lower_limit = 0.01, show_plot = FALSE)
 test_wins(cont_vars[2], upper_limit = 0.04, show_plot = FALSE)
-test_wins(cont_vars[3], upper_limit = 0.05, show_plot = TRUE)
-```
-
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
-
-```r
+test_wins(cont_vars[3], upper_limit = 0.05, show_plot = FALSE)
 test_wins(cont_vars[4], upper_limit = 0.0025, show_plot = FALSE)
 test_wins(cont_vars[5], upper_limit = 0.135, show_plot = FALSE)
 test_wins(cont_vars[6], lower_limit = 0.1, show_plot = FALSE)
@@ -656,112 +651,57 @@ test_wins(cont_vars[17], lower_limit = 0.05, show_plot = FALSE)
 test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = FALSE)
 ```
 
-(ToDo: Create prettier graphs)
 
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
-```r
-# cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
-# num_vars <- length(cont_vars)
-# num_rows <- ceiling(2)
-# num_cols <- ceiling(num_vars / num_rows)
-# 
-# par(oma = c(0, 0, 0, 0))
-# 
-# par(mfrow = c(num_rows, num_cols))
-# 
-# for (i in 1:num_vars) {
-#   col <- cont_vars[i]
-#   
-#   # Reduce the inner margins to make the plots larger
-#   par(mar = c(2, 2, 1, 1))
-#   
-#   boxplot(LifeExp[, col], col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
-#   
-#   # Increase the inner margins for the histogram to make it taller
-#   par(mar = c(4, 2, 1, 1))
-# }
-```
-
-```r
-# cont_vars <- colnames(LifeExp_old)[4:length(colnames(LifeExp_old))]
-# num_vars <- length(cont_vars)
-# num_rows <- ceiling(2)
-# num_cols <- ceiling(num_vars / num_rows)
-# 
-# par(oma = c(0, 0, 0, 0))
-# 
-# par(mfrow = c(num_rows, num_cols))
-# 
-# for (i in 1:num_vars) {
-#   col <- cont_vars[i]
-#   
-#   # Reduce the inner margins to make the plots larger
-#   par(mar = c(2, 2, 1, 1))
-#   
-#   boxplot(LifeExp_old[, col], col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
-#   
-#   # Increase the inner margins for the histogram to make it taller
-#   par(mar = c(4, 2, 1, 1))
-# }
-```
-
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 Let's also compare the before and after distributions of some of our variables
 
 
 ```r
 p1 <- ggplot() +
-  geom_density(data = LifeExp_old, aes(x = Life.expectancy), color = 5, lwd = 1) +
-  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, lwd = 1) +
+  geom_density(data = LifeExp_old, aes(x = Life.expectancy), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, lwd = 0.8) +
+  xlab("Life Expectancy Winsorization")
+
+p2 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = infant.deaths), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = infant.deaths), color = 2, lwd = 0.8) +
   xlab("Infant Deaths Winsorization")
 
-# Print the plot
-print(p1)
+p3 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = GDP), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = GDP), color = 2, lwd = 0.8) +
+  xlab("GDP Winsorization")
+
+p4 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = Population), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = Population), color = 2, lwd = 0.8) +
+  xlab("Population Winsorization")
+
+grid.arrange(p1,p2,p3,p4, ncol = 2)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 
 
 ## Exploratory Data Analysis
 
 
-```r
-#Histogram Visualizations
-
-# library(rcompanion)
-# 
-# par(mfrow=c(2,2))
-# 
-# pnh_life_exp <- plotNormalHistogram(LifeExp$Life.expectancy, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Life Expectancy Histogram",length = 10000, linecol="#ffa600", lwd=3)
-# 
-# pnh_alch <- plotNormalHistogram(LifeExp$Alcohol, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Alcohol Histogram",length = 10000, linecol="#ffa600", lwd=3)
-# 
-# pnh_school <-plotNormalHistogram(LifeExp$Schooling, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Schooling",length = 10000, linecol="#ffa600", lwd=3)
-# 
-# pnh_gdp <- plotNormalHistogram(LifeExp$GDP, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Histogram",length = 10000, linecol="#ffa600", lwd=3)
-# 
-# pnh_gdp_log <- plotNormalHistogram(log(LifeExp$GDP), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "GDP Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
-# 
-# pnh_popul <- plotNormalHistogram(LifeExp$Population, prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Histogram",length = 10000, linecol="#ffa600", lwd=3)
-# 
-# pnh_popul_log <- plotNormalHistogram(log(LifeExp$Population), prob = FALSE, col="#B9D9EB", border="#003f5c",main = "Population Log Histogram",length = 10000, linecol="#ffa600", lwd=3)
-```
-
-
-
 ### Q1. Does the sample gives enough evidence to say that Developed countries have more average life expectancy than Developing countries?
 
 ```r
-ggplot(LifeExp, aes(x = Status, fill = Status)) + 
-  geom_bar() + 
-  scale_fill_manual(values = c("#ffa600","#bc5090")) + 
+ggplot(LifeExp, aes(x = Status, fill = Status)) +
+  geom_bar(alpha = 0.6) +
+  scale_fill_manual(values = c(2, 5)) +
   labs(title = "Status of Country", x = "Status", y = "Count") +
-  theme(axis.text = element_text(size = 8), axis.title = element_text(size = 8), 
-        axis.text.y = element_text(size = 8), axis.title.y = element_text(size = 8))
+  theme(axis.text = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 
 
@@ -769,10 +709,10 @@ ggplot(LifeExp, aes(x = Status, fill = Status)) +
 ggplot(LifeExp, aes(x=Life.expectancy, fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "Life Expectancy by Status", x ="Life Expectancy", y="Density") +
-  scale_fill_manual(values = c("#FFA600", "#A05195"))
+  scale_fill_manual(values = c(2, 5))
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 Due to our lack of knowledge regarding the population variance, we will employ a two-sample T-Test instead of a two-sample Z-Test in order to assess the equality of the two means. Prior to conducting the T-Test, it is necessary to determine whether the variances of the two populations are equal. To accomplish this, we will employ an F-Test.
 
@@ -958,13 +898,16 @@ Conversely, a lower value of the index indicates a more unequal income distribut
 
 
 ```r
-life_expectancy_vs_incomecomp <- ggplot(LifeExp, aes(Income.composition.of.resources, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
+life_expectancy_vs_incomecomp <- ggplot(LifeExp, aes(Income.composition.of.resources, Life.expectancy)) + geom_jitter(color = 2, alpha = 0.3)
 
 life_expectancy_vs_incomecomp
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
+
+
 By this scatterplot we can see that The Income composition of resources and their contribution to human development positively influences the Life Expectancy but let's see the correlation also with the Pearson correlation coefficient.
+
 
 
 ```r
@@ -989,7 +932,7 @@ head(in_comp_res,5)
 ggscatter(in_comp_res, x = "Income.composition.of.resources", y = "Life.expectancy", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", xlab = "HDI (Income composition of resources)", ylab = "Life Expectancy")
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 ```r
 cor.test(in_comp_res$Income.composition.of.resources,in_comp_res$Life.expectancy )
@@ -1138,7 +1081,7 @@ head(Alc_X,5)
 ggscatter(Alc_X, x = "Alcohol", y = "Life.expectancy", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", xlab = "Alcohol consumption (in litres of pure alcohol", ylab = "Life Expectancy")
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
 
 
 ```r
@@ -1170,27 +1113,27 @@ Higher GDP at Developed countries can influence alcohol consumption patterns to 
 ggplot(LifeExp, aes(x=Alcohol, fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "Alcohol consumption by Status", x ="Alcohol", y="Density") +
-  scale_fill_manual(values = c("#FFA600", "#A05195"))
+  scale_fill_manual(values = c(2, 5))
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
 
 ```r
 ggplot(LifeExp, aes(x=log(GDP), fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "GDP by Status", x ="GDP", y="Density") +
-  scale_fill_manual(values = c("#FFA600", "#A05195"))
+  scale_fill_manual(values = c(2, 5))
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-49-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
 
 
 ```r
-life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jitter(color = "lightblue", alpha = 0.5) + theme_light()
+life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jitter(color = 2, alpha = 0.3)
 life_expectancy_vs_GDP 
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-50-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-47-1.png)<!-- -->
 
 
 ### Q7 Correlation between Life Expectancy and Immunization.
@@ -1306,20 +1249,16 @@ P-value for both Polio and Diphtheria immunization coverage for one-year old is 
 
 
 ```r
-life_expectancy_vs_Hepatitis_B <- ggplot(LifeExp, aes(Hepatitis.B, Life.expectancy)) + geom_jitter(color = "purple", alpha = 0.5) + theme_light()
-
-life_expectancy_vs_Diphtheria  <- ggplot(LifeExp, aes(Diphtheria, Life.expectancy)) + geom_jitter(color = "orange", alpha = 0.5) + theme_light()
+life_expectancy_vs_Diphtheria  <- ggplot(LifeExp, aes(Diphtheria, Life.expectancy)) + geom_jitter(color = 5, alpha = 0.3)
                               
-life_expectancy_vs_Polio  <- ggplot(LifeExp, aes(Polio, Life.expectancy)) + geom_jitter(color = "pink", alpha = 0.5) + theme_light()
+life_expectancy_vs_Polio  <- ggplot(LifeExp, aes(Polio, Life.expectancy)) + geom_jitter(color = 2, alpha = 0.3)
 
-life_expectancy_vs_Measles  <- ggplot(LifeExp, aes(Measles, Life.expectancy)) + geom_jitter(color = "light green", alpha = 0.5) + theme_light()
-
-p <- plot_grid(life_expectancy_vs_Hepatitis_B, life_expectancy_vs_Diphtheria, life_expectancy_vs_Polio, life_expectancy_vs_Measles) 
+p <- plot_grid(life_expectancy_vs_Diphtheria, life_expectancy_vs_Polio) 
 title <- ggdraw() + draw_label("Correlation between Immunizations and life expectancy", fontface='bold')
-plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+plot_grid(title,p, ncol=1)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-54-1.png)<!-- -->
 
 
 ## Constructing Correlation Matrix
@@ -1334,7 +1273,7 @@ cor_matrix <- cor(numeric_vars)
 corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-55-1.png)<!-- -->
 
 ```r
 # Adjust the text size
@@ -1346,7 +1285,7 @@ corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
 cor_matrix %>% corrr::network_plot(min_cor = .3)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-59-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-56-1.png)<!-- -->
 
 
 
@@ -1476,7 +1415,7 @@ ggplot(train, aes(x = Income.composition.of.resources, y = Life.expectancy)) +
               color = "red", linetype = "solid", linewidth = 1.2)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-63-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-60-1.png)<!-- -->
 That’s not the whole picture though. Residuals could show how poorly a model represents data. Residuals are leftover of the outcome variable after fitting a model (predictors) to data, and they could reveal patterns in the data unexplained by the fitted model. Using this information, not only we can check if linear regression assumptions are met, but we can improve our model in an exploratory way.
 
 Let’s now have a look at the *diagnostic plots*, in order to check whether Linear regression assumptions are met. These assumptions include:
@@ -1501,7 +1440,7 @@ par(mfrow = c(2, 2))
 plot(simple_lm)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-64-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-61-1.png)<!-- -->
 *Residuals vs Fitted*
 
 This plot shows if residuals have non-linear patterns. There could be a non-linear relationship between predictor variables and the outcome variable, and the pattern could show up in this plot if the model doesn’t capture the non-linear relationship. In our case, we find almost equally spread residuals around a horizontal line without distinct patterns. So, this is a good indication that we don’t have non-linear relationships.
@@ -1693,7 +1632,7 @@ par(mfrow=c(2,2))
 plot(full_lm_low_vif)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-66-1.png)<!-- -->
 
 Fitted vs Residual graph\
 The red line is very close to zero and the spread of the residuals is approximately the same across the x axis, so we have no discernible non-linear trends or indications of non-constant variance.
@@ -1725,7 +1664,7 @@ Both feature selection techniques yielded the same results. So, for simplicity, 
 plot_subsets_summary(backward_sel_lm)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-72-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
 
 Based on the observed graphs, it is clear that different statistical measures, such as Cp, BIC, and Adjusted R-squared, produce varying results in the feature selection process. The use of Adjusted R-squared led to a model with one less variable compared to the original model. Cp resulted in the removal of two variables, while BIC suggested eliminating four variables from the model. Notably, Cp and AIC are equivalent and select the same model, hence we have focused on presenting the results based on Cp.
 
@@ -1787,19 +1726,19 @@ To represent the most significant variables, here we report the variable elimina
 plot(backward_sel_lm, scale = 'r2')
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-74-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-71-1.png)<!-- -->
 
 ```r
 plot(backward_sel_lm, scale = 'bic')
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-74-2.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-71-2.png)<!-- -->
 
 ```r
 plot(backward_sel_lm, scale = 'Cp')
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-74-3.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-71-3.png)<!-- -->
 
 Based on the regsubsets plot, we reach the same conclusion as before. Therefore, we will proceed with removing the variables "Population" and "Total.expenditure" from our model. After removing these variables, we will retrain the multiple linear regressor using the updated set of features.
 
@@ -1850,7 +1789,7 @@ The variance explained by the model is 83.33%, which is nearly identical to the 
 hist(featureSel_lm$residuals)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-76-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-73-1.png)<!-- -->
 The histogram of the residuals exhibits a pattern that closely resembles a normal distribution. However, let's also check the QQ plot.
 
 
@@ -1858,7 +1797,7 @@ The histogram of the residuals exhibits a pattern that closely resembles a norma
 plot(featureSel_lm, which = 2)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-77-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-74-1.png)<!-- -->
 We can observe that the distribution has "fat" tails - both the ends of the Q-Q plot deviate from the straight line and its center follows a straight line. We refer to this as positive kurtosis (a measure of “Tailedness”).
 
 Shapiro Test
@@ -1932,7 +1871,7 @@ summary(log_featureSel_lm)
 hist(log_featureSel_lm$residuals)
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-80-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-77-1.png)<!-- -->
 
 
 
@@ -1969,7 +1908,7 @@ ridge_res = prepare_ridge_lasso(X = X,
                                 )
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-83-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-83-2.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-80-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-80-2.png)<!-- -->
 
 ```
 ## Best lambda: 0.7588397
@@ -2003,7 +1942,7 @@ lasso_res = prepare_ridge_lasso(X = X,
                                 )
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-85-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-85-2.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-82-1.png)<!-- -->![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-82-2.png)<!-- -->
 
 ```
 ## Best lambda: 0.02161203
@@ -2091,7 +2030,7 @@ fourfoldplot(ctable, color = c("#CC6666", "#99CC99"),
              conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
 
-![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-89-1.png)<!-- -->
+![](Life-Expectancy-Statistical-Analysis_files/figure-html/unnamed-chunk-86-1.png)<!-- -->
 
 
 
