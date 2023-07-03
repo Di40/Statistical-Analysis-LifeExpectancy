@@ -846,12 +846,26 @@ Let's also compare the before and after distributions of some of our variables
 
 ```{r}
 p1 <- ggplot() +
-  geom_density(data = LifeExp_old, aes(x = Life.expectancy), color = 5, lwd = 1) +
-  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, lwd = 1) +
+  geom_density(data = LifeExp_old, aes(x = Life.expectancy), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, lwd = 0.8) +
+  xlab("Life Expectancy Winsorization")
+
+p2 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = infant.deaths), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = infant.deaths), color = 2, lwd = 0.6) +
   xlab("Infant Deaths Winsorization")
 
-# Print the plot
-print(p1)
+p3 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = GDP), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = GDP), color = 2, lwd = 0.8) +
+  xlab("GDP Winsorization")
+
+p4 <- ggplot() +
+  geom_density(data = LifeExp_old, aes(x = Population), color = 5, lwd = 1.2) +
+  geom_density(data = LifeExp, aes(x = Population), color = 2, lwd = 0.8) +
+  xlab("Population Winsorization")
+
+grid.arrange(p1,p2,p3,p4, ncol = 2)
 ```
 
 
