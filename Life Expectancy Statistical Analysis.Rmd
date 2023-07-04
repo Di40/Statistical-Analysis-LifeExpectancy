@@ -48,6 +48,7 @@ library(pROC)
 library(PRROC)
 library(vcd)
 ```
+
 ## Why is it important to have knowledge about life expectancy?
 
 > Understanding life expectancy, which refers to the average duration a person is projected to live, holds significance as it serves as a comprehensive measure of community well-being. Factors such as elevated infant mortality rates, increased occurrences of suicide, limited access to quality healthcare, and other determinants can contribute to lower life expectancies. In addition, life expectancy finds various applications in the financial domain, encompassing areas such as life insurance, pension planning, and Social Security benefits.
@@ -80,6 +81,7 @@ tryCatch({
 })
 cat(paste("Number of rows: ", nrow(LifeExp), "| Number of columns: ", ncol(LifeExp)))
 ```
+
 Let's take a look at the first 5 rows:
 
 ```{r}
@@ -137,6 +139,7 @@ Let's check whether the columns of our dataframe correspond to the described typ
 ```{r}
 str(LifeExp)
 ```
+
 The shown result corresponds to the given dataset description, which means that there were no problems when loading the data. So, we can begin the first part of our statistical analysis, which is data preparation (aka cleaning, wrangling).
 
 ## Data Wrangling 
@@ -157,6 +160,7 @@ LifeExp$Status  <- as.factor(LifeExp$Status)
 
 str(LifeExp)
 ```
+
 ### Checking unique values
 
 Let's have a look at the unique values in our dataset.\
@@ -173,7 +177,6 @@ for (i in 1 : ncol(LifeExp)) {
   cat(column_name, ": ", num_unique, "\n")
 }
 ```
-
 
 ### Missing Values
 
@@ -308,8 +311,8 @@ LifeExp <- bind_rows(imputed_data)
 
 nulls_breakdown(LifeExp)
 ```
-As we can see the missing values have been successfully handled using the interpolation method. We can now proceed to address the issue of outliers. Outliers can have a significant impact on data analysis and modeling, and it is important to identify and handle them appropriately.
 
+As we can see the missing values have been successfully handled using the interpolation method. We can now proceed to address the issue of outliers. Outliers can have a significant impact on data analysis and modeling, and it is important to identify and handle them appropriately.
 
 ### Outlier analysis
 
@@ -327,7 +330,6 @@ Similar to missing values, to address the presence of outliers in the data, seve
   - Transforming the data: Apply transformations such as logarithmic, inverse, or square root transformations to reduce the impact of outliers.
 
 Each of these steps aims to identify, assess, and appropriately handle the outliers in the dataset to ensure robust analysis and accurate interpretations.
-
 
 #### Outlier detection
 
@@ -543,13 +545,8 @@ b18 <- ggplot(LifeExp, aes(x=Income.composition.of.resources)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("Income per resources")
 
-
-
 grid.arrange(p1, b1, p2, b2, p3, b3, p4, b4, p5, b5, p6, b6,p7, b7, p8, b8)
 grid.arrange(p9, b9,p10, b10, p11, b11, p12, b12, p14, b14,p15, b15, p17, b17, p18, b18)
-
-
-
 ```
 
 Visually inspecting the data, it is evident that there are several outliers present in the variables, including the target variable (life expectancy). To statistically identify outliers, *Tukey's method* can be applied. This method defines outliers as values that lie outside 1.5 times the interquartile range (IQR). By calculating the quartiles and IQR for each variable, the upper and lower bounds can be determined, and any values outside these bounds can be classified as outliers.
@@ -600,7 +597,6 @@ We attempted to handle outliers using the last approach, which involved applying
 
 Given that each variable in the dataset exhibits a unique number of outliers and these outliers are distributed on different sides of the data, the most suitable approach would likely involve Winsorizing (limiting) the values for each variable individually until no outliers remain. The provided function bellow enables this process by iterating through each variable and allowing the specification of lower and/or upper limits for Winsorization. By default, the function generates two boxplots side by side for each variable, depicting the original data and the Winsorized data, respectively. Once a satisfactory limit is determined through visual analysis, the Winsorized data is saved in the wins_dict dictionary for convenient future access.
 
-
 ```{r}
 test_wins <- function(col, lower_limit = 0, upper_limit = 0, show_plot = TRUE) {
   LifeExp_original <- LifeExp[[col]]
@@ -635,7 +631,6 @@ test_wins(cont_vars[15], upper_limit = 0.035, show_plot = FALSE)
 test_wins(cont_vars[16], upper_limit = 0.035, show_plot = FALSE)
 test_wins(cont_vars[17], lower_limit = 0.05, show_plot = FALSE)
 test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = FALSE)
-
 ```
 
 
@@ -823,7 +818,6 @@ grid.arrange(p1,p2,p3,p4, ncol = 2)
 ```
 
 
-
 ## Exploratory Data Analysis
 
 
@@ -839,7 +833,6 @@ ggplot(LifeExp, aes(x = Status, fill = Status)) +
         axis.title.y = element_text(size = 8))
 ```
 
-
 ```{r}
 ggplot(LifeExp, aes(x=Life.expectancy, fill=Status)) +
     geom_density(alpha=.5) +
@@ -852,13 +845,12 @@ Due to our lack of knowledge regarding the population variance, we will employ a
 
 To start, we will filter and group the data by country, allowing us to calculate the average life expectancy for each country over the span of 16 years.
 
-
 ```{r}
 
 Developing_X <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (Status == "Developing"), FUN = mean)
-
 Developed_Y <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (Status == "Developed"), FUN = mean)
 ```
+
 ```{r}
 head(Developing_X,5)
 head(Developed_Y,5)
@@ -868,7 +860,7 @@ head(Developed_Y,5)
 var.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy)
 ```
 
-The observed p-value is less than alpha(0.05 by default). Hence we reject the null hypothesis and accept the alternate statement that the variance of two populations is not equal.
+The observed p-value is less than alpha (0.05 by default). Hence we reject the null hypothesis and accept the alternate statement that the variance of two populations is not equal.
 
 ```{r}
 t.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy, alternative = "greater", var.equal = FALSE)
@@ -878,7 +870,7 @@ The final conclusion is that the null hypothesis is rejected against the alterna
 
 ### Q2 Using the sample, test whether schooling years (average) has a significant impact on life expectancy?
 
-Education creates awareness about healthy living. For example Vaccine hesitancy during this Covid-19 period, especially among the rural population, has highlighted the importance of education.
+Education creates awareness about healthy living. For example Vaccine hesitancy during this COVID-19 period, especially among the rural population, has highlighted the importance of education.
 
 We will be using the ANOVA test to test the significance of education on life expectancy. Here we will categorize countries into one of the three categories: ‘Low’ (≤8), ‘Medium’ (>8 and ≤12), ‘High’ (>12) depending upon the country’s average schooling years.
 
@@ -934,12 +926,12 @@ life_expectancy_vs_incomecomp <- ggplot(LifeExp, aes(Income.composition.of.resou
 life_expectancy_vs_incomecomp
 ```
 
-By this scatterplot we can see that The Income composition of resources and their contribution to human development positively influences the Life Expectancy but let's see the correlation also with the Pearson correlation coefficient.
+By this scatter plot we can see that The Income composition of resources and their contribution to human development positively influences the Life Expectancy but let's see the correlation also with the Pearson correlation coefficient.
 
 ```{r}
 in_comp_res <-aggregate(cbind(Life.expectancy, Income.composition.of.resources) ~ Country, data = LifeExp, FUN = mean)
 
-head(in_comp_res,5)
+head(in_comp_res, )
 ```
 
 ```{r}
@@ -952,7 +944,7 @@ cor.test(in_comp_res$Income.composition.of.resources,in_comp_res$Life.expectancy
 
 A correlation coefficient of 0.8376092 indicates a strong positive linear relationship between the variables being correlated, therefore the countries with higher income composition of resources for human development have better life expectancy. Also the regression line explains 82% of variance in the data. Thus countries should spend more on the human development to achieve higher life expectancy.
 
-### Q4 Italian Government has claimed that they have spent an average of around 8.41% of their total expenditure on health for the year 2000–2015. Can we test their claim?
+### Q4. Italian Government has claimed that they have spent an average of around 8.41% of their total expenditure on health for the year 2000–2015. Can we test their claim?
 
 We will use a One-Sample t-test and not a One-sample Z-test to test the claim since we have no information about the population variance.
 
@@ -974,7 +966,7 @@ India_Y <- select(India_X,Total.expenditure)
 t.test(India_Y, mu = 5.2, alternative = "two.sided")
 ```
 
-Since 5.2 doesn’t lie in the 95% confidence interval range [4.232587, 4.689913], we can say that the sample doesn’t give enough evidence to accept the claim made by the Indian Government. On the other hand Italy's claim of 8.4 lies in the 95% CI range of [8.320883 ,9.021617].
+Since 5.2 doesn’t lie in the 95% confidence interval range [4.232587, 4.689913], we can say that the sample doesn’t give enough evidence to accept the claim made by the Indian Government. On the other hand Italy's claim of 8.4 lies in the 95% CI range of [8.320883, 9.021617].
 
 ### Q5 What are our oservations when comparing the proportions of the number of infant deaths and the number of under-five deaths.
 
@@ -986,7 +978,9 @@ Mort_X <- aggregate(cbind(Life.expectancy, infant.deaths, under.five.deaths) ~ C
 head(Mort_X,5)
 
 ```
-infant_deaths column represents the number of infant deaths per 1000 population and similarly, under_five_deaths represents the number of under-five deaths per 1000 population. We have to use the average value of infant or under-five deaths of all the countries and take its ceiling value.
+
+infant.deaths column represents the number of infant deaths per 1000 population and similarly, under.five.deaths represents the number of under-five deaths per 1000 population. We have to use the average value of infant or under five deaths of all the countries and take its ceiling value.
+
 ```{r}
 mortx <- ceiling(mean(Mort_X$infant.deaths))
 morty <- ceiling(mean(Mort_X$under.five.deaths))
@@ -1017,12 +1011,11 @@ ggscatter(Alc_X, x = "Alcohol", y = "Life.expectancy", add = "reg.line", conf.in
 cor.test(Alc_X$Alcohol, Alc_X$Life.expectancy)
 ```
 
-The results indicate a statistically significant moderate positive linear relationship (correlation coefficient = 0.4323943) between alcohol consumption and life expectancy. This suggests that higher levels of alcohol consumption are associated with increased life expectancy, within the range of data analyzed. However,before jumping to conclusions we need to also take in consideration other factors.
+The results indicate a statistically significant moderate positive linear relationship (correlation coefficient = 0.43) between alcohol consumption and life expectancy. This suggests that higher levels of alcohol consumption are associated with increased life expectancy, within the range of data analyzed. However,before jumping to conclusions we need to also take in consideration other factors.
 
 Developed countries tend to have higher levels of alcohol consumption compared to developing countries. This can be attributed to various factors such as higher income levels, greater access to alcohol, more established alcohol industries, and different cultural norms surrounding alcohol. This was also our conclusion from our previous analysis where we concluded that life expectancy in developed countries is more than that of developing countries.
 
 Higher GDP at Developed countries can influence alcohol consumption patterns to some extent. As countries experience economic growth and an increase in GDP, there is often an associated rise in income levels and discretionary spending power. This can lead to increased alcohol consumption. 
-
 
 ```{r}
 ggplot(LifeExp, aes(x=Alcohol, fill=Status)) +
@@ -1055,6 +1048,7 @@ Immun_X <- aggregate(cbind(Life.expectancy, Polio, Diphtheria) ~ Country, data =
 
 head(Immun_X,5)
 ```
+
 ```{r}
 xx_1 <- Immun_X %>% filter(Polio <= 85)
 xx_2 <- Immun_X %>% filter(Polio > 85)
@@ -1069,7 +1063,6 @@ zz3 <- data.frame(Life.expectancy = yy_1$Life.expectancy, Country = yy_1$Country
 zz3$Diphtheria = 'Low'
 zz4 <- data.frame(Life.expectancy = yy_2$Life.expectancy, Country = yy_2$Country)
 zz4$Diphtheria = 'High'
-
 ```
 
 ```{r}
@@ -1126,9 +1119,9 @@ cor_matrix %>% corrr::network_plot(min_cor = .3)
 ```
 
 
-## Linear Regression
+## **Linear Regression**
 
-After completing the data cleaning process and exploring and engineering features, we can now move on to the main phase of this project: making predictions using linear regression. Initially, we will examine the effectiveness of a *simple linear regressor* (using only one feature). Then, we will progress to employing all the features through *multiple linear regression* or selecting a subset of features using appropriate techniques for *feature selection*.
+After completing the data cleaning process and exploring and engineering features, we can now move on to the main phase of this project: making predictions using linear regression. Initially, we will examine the effectiveness of a **simple linear regressor** (using only one feature). Then, we will progress to employing all the features through **multiple linear regression** or selecting a subset of features using appropriate techniques for **feature selection**.
 
 Based on the exploratory data analysis (EDA), it is evident that our target variable, "Life expectancy," demonstrates the highest correlation with "Adult mortality." However, upon examining the scatter plot, it appears that this variable may not be suitable for linear regression. Therefore, we proceed by choosing the second most correlated variable, namely "Income.composition.of.resources". By observing the scatter plot for this particular variable, we can notice a linear trend.
 
@@ -1138,31 +1131,44 @@ However, considering the benefits of feature scaling, such as ensuring consisten
 
 Afterward, to ensure unbiased evaluations, we proceed by randomly partitioning our dataset into separate training and test sets. For models that require cross-validation, we will utilize a portion of the training set as a validation set.
 
-
 ```{r}
-LifeExp_scaled <- LifeExp %>% mutate(across(where(is.numeric), scale))
-LifeExp_scaled_regression <- LifeExp_scaled %>% select(-Country, -Year)
-
 train_percent <- 0.8
 test_percent <- 1 - train_percent
-num_rows <- nrow(LifeExp_scaled_regression)
-train_size <- floor((train_percent) * nrow(LifeExp_scaled_regression))
+num_rows <- nrow(LifeExp)
+train_size <- floor((train_percent) * num_rows)
 
 set.seed(1)
 
 train_indices <- sample.int(n = num_rows, size = train_size)
 
-train <- LifeExp_scaled_regression[train_indices,]
-test <- LifeExp_scaled_regression[-train_indices,]
+train <- LifeExp[train_indices, !(names(LifeExp) %in% c("Country", "Year"))]
+test <- LifeExp[-train_indices, !(names(LifeExp) %in% c("Country", "Year"))]
+
+train <- train %>% mutate(across(where(is.numeric), scale))
+test <- test %>% mutate(across(where(is.numeric), scale))
 
 cat("Train size: ", train_size, "\nTest size: ", num_rows - train_size)
 
 Y_colname <- "Life.expectancy"
-X_colnames <- colnames(LifeExp_scaled_regression)[colnames(LifeExp_scaled_regression) != Y_colname]
-
+X_colnames <- colnames(train)[colnames(train) != Y_colname]
 ```
 
-### Simple linear regression
+```{r}
+df_metrics_regression <- data.frame(Model_name = character(),
+                                    Adj_R2 = numeric(),
+                                    AIC = numeric(),
+                                    BIC = numeric(),
+                                    n_coef = numeric(),
+                                    MSE = numeric(),
+                                    RMSE = numeric(),
+                                    n_RMSE_sd = numeric(),
+                                    n_RMSE_range = numeric())
+colnames(df_metrics_regression) <- c("Model_name", "Adj_R2", "AIC", "BIC", "n_coef", "MSE", "RMSE", "n_RMSE_sd", "n_RMSE_range")
+```
+
+
+
+### **Simple linear regression**
 
 The linear regression equation is given by: $$ Y = \beta_0 + \beta_1 \cdot x + \varepsilon $$,\
 where $$\beta_0$$ represents the intercept, $$\beta_1$$ represents the coefficient for the chosen feature "Income.composition.of.resources" and $$\varepsilon$$ represents a random error.
@@ -1172,9 +1178,24 @@ simple_lm <- lm(Life.expectancy ~ Income.composition.of.resources, data = train)
 summary(simple_lm)
 ```
 
+```{r, echo=FALSE}
+mse <- mean((test$Life.expectancy - predict(simple_lm, newdata = test))^2)
+
+new_row <- data.frame(Model_name = 'Simple linear regression',
+                      Adj_R2 = summary(simple_lm)$adj.r.squared,
+                      AIC = AIC(simple_lm),
+                      BIC = BIC(simple_lm),
+                      n_coef = length(coefficients(simple_lm)),
+                      MSE = mse,
+                      RMSE = sqrt(mse),
+                      n_RMSE_sd = sqrt(mse) / sd(test$Life.expectancy),
+                      n_RMSE_range = sqrt(mse)/diff(range(test$Life.expectancy)))
+df_metrics_regression <- rbind(df_metrics_regression, new_row)
+```
+
 The analysis reveals that the variable "Income.composition.of.resources" has a moderate-to-high level of explanatory power, as indicated by an R-squared value of 0.6248. This means that approximately 62.48% of the variability in life expectancy can be attributed to this variable.
 
-Both the intercept and the coefficient associated with "Income.composition.of.resources" are highly significant, as indicated by the p-values being less than 2e-16. The F-statistic also supports this finding, with a value of 3910 and an extremely low p-value (< 2.2e-16), suggesting that the observed relationship is not due to chance.
+Both the intercept and the coefficient associated with "Income.composition.of.resources" are highly significant, as indicated by the p-values being less than 0.05. The F-statistic also supports this finding, with a value of 3910 and an extremely low p-value, suggesting that the observed relationship is not due to chance.
 
 The formula for the regression line can be expressed as follows:\
 Life.Expectancy = 41.2191 + 43.7221 * Income.composition.of.resources\
@@ -1191,12 +1212,11 @@ ggplot(train, aes(x = Income.composition.of.resources, y = Life.expectancy)) +
   geom_abline(slope = coef(simple_lm)["Income.composition.of.resources"],
               intercept = coef(simple_lm)["(Intercept)"],
               color = "red", linetype = "solid", linewidth = 1.2)
-
 ```
 
 That’s not the whole picture though. Residuals could show how poorly a model represents data. Residuals are leftover of the outcome variable after fitting a model (predictors) to data, and they could reveal patterns in the data unexplained by the fitted model. Using this information, not only we can check if linear regression assumptions are met, but we can improve our model in an exploratory way.
 
-Let’s now have a look at the *diagnostic plots*, in order to check whether Linear regression assumptions are met. These assumptions include:
+Let’s now have a look at the **diagnostic plots**, in order to check whether Linear regression assumptions are met. These assumptions include:
 
 1. **Linearity**: There should be a linear relationship between the predictors (x) and the outcome (y). This implies that the relationship between the variables can be adequately captured by a straight line or a linear combination of predictors.
 
@@ -1213,24 +1233,24 @@ par(mfrow = c(2, 2))
 plot(simple_lm)
 ```
 
-*Residuals vs Fitted*
+**Residuals vs Fitted**
 
 This plot shows if residuals have non-linear patterns. There could be a non-linear relationship between predictor variables and the outcome variable, and the pattern could show up in this plot if the model doesn’t capture the non-linear relationship. In our case, we find almost equally spread residuals around a horizontal line without distinct patterns. So, this is a good indication that we don’t have non-linear relationships.
 
-*Normal Q-Q*
+**Normal Q-Q**
 
 This plot shows if residuals are normally distributed. Do residuals follow a straight line well or do they deviate severely? Thus for small sample sizes, it can't be assumed that the estimator $$\hat{\beta}$$ isn't Gaussian either, meaning the standard confidence intervals and significance tests are invalid. Our plot shows many points lying on the dotted line, however the rightmost and leftmost points are deviating from the line, suggesting slight right and left skewness.
 
-*Scale-Location*
+**Scale-Location**
 
-It's is also called a Spread-Location plot. This plot shows if residuals are spread equally along the ranges of predictors. This is how we can check the assumption of equal variance (*homoscedasticity*). It’s good if we see a horizontal line with equally (randomly) spread points, which is true in our case (the line is roughly horizontal).
+It's is also called a Spread-Location plot. This plot shows if residuals are spread equally along the ranges of predictors. This is how we can check the assumption of equal variance (**homoscedasticity**). It’s good if we see a horizontal line with equally (randomly) spread points. In our case the red line deviates a little from horizontal, showing small presence of heteroskedasticity.
 
-*Residuals vs Leverage*
+**Residuals vs Leverage**
 
 Leverage refers to the extent to which the coefficients in the regression model would change if a particular observation was removed from the dataset. Here, we watch out for outlying values at the upper right corner or at the lower right corner. Those spots are the places where cases can be influential against a regression line. When cases are outside of the dashed lines (meaning they have high “Cook’s distance” scores), the cases are influential to the regression results. The regression results will be altered if we exclude those cases.\
 We can observe that there are not any influential points in our regression model.
 
-By the previous analysis, we can conclude that our data is behaving linearly as we expected and it does have homoscedasticity.
+By the previous analysis, we can conclude that our data is behaving linearly as we expected, but it does show a degree of heteroscedasticity.
 
 ```{r}
 pred <- predict(simple_lm, newdata = test)
@@ -1241,7 +1261,7 @@ cat("RMSE =", rmse)
 cat("\nNormalized RMSE (sd)    =", normalized_rmse_std)
 cat("\nNormalized RMSE (range) =", normalized_rmse_range)
 ```
-The normalized RMSE (sd) is 0.5961559, indicating that the model's predictions have an error of around 59.6 % of the standard deviation of the target variable. The normalized RMSE (range) is 0.1281596, suggesting that the model's predictions have an error of approximately 12.8% of the range of the target variable.
+The normalized RMSE (sd) is 0.596, indicating that the model's predictions have an error of around 59.6 % of the standard deviation of the target variable. The normalized RMSE (range) is 0.128, suggesting that the model's predictions have an error of approximately 12.8% of the range of the target variable.
 
 ### Multiple linear regression
 
@@ -1251,9 +1271,25 @@ In this section we will train a regression model using multiple features. As par
 full_lm <- lm(train[,Y_colname] ~ ., data = train[, X_colnames])
 summary(full_lm)
 ```
+
+```{r, echo=FALSE}
+mse <- mean((test$Life.expectancy - predict(full_lm, newdata = test))^2)
+
+new_row <- data.frame(Model_name = 'Multiple linear regression',
+                      Adj_R2 = summary(full_lm)$adj.r.squared,
+                      AIC = AIC(full_lm),
+                      BIC = BIC(full_lm),
+                      n_coef = length(coefficients(full_lm)),
+                      MSE = mse,
+                      RMSE = sqrt(mse),
+                      n_RMSE_sd = sqrt(mse) / sd(test$Life.expectancy),
+                      n_RMSE_range = sqrt(mse)/diff(range(test$Life.expectancy)))
+df_metrics_regression <- rbind(df_metrics_regression, new_row)
+```
+
 The summary indicates that the residuals are symmetrically distributed, with a median almost equal to 0 (0.0793). We will examine the residuals more closely later. The full Linear regression model explains 84.99% of the variance associated with the response variable. The F-statistic is 733.3 (>> 1), and its p-value is nearly 0, providing clear evidence against the null hypothesis that all coefficients are equal to zero. This means that at least one variable is associated with the response. The p-values of the predictor variables allow us to determine their significance. Variables with lower p-values are more significant in relation to the response. Notably, features such as infant.deaths, Alcohol, under.five.deaths, and GDP are not statistically significant in our model.
 
-To check the multicollinearity in our data we will look at the Variance Inflation Factors (VIF):
+To check the multicollinearity in our data we will look at the **Variance Inflation Factors (VIF)**:
 
 ```{r}
 vif_values <- vif(full_lm)
@@ -1262,7 +1298,7 @@ vif_table <- data.frame(VIF = sorted_vif)
 vif_table
 ```
 
-It is generally desirable to have VIF values as small as possible, closer to 1, which indicates low levels of collinearity.  As a rule of thumb VIF = 5 is taken as a threshold, and any independent variable with VIF > 5 will have to be removed, due to problematic amount of collinearity.
+It is generally desirable to have VIF values as small as possible, closer to 1, which indicates low levels of collinearity.  As a rule of thumb VIF = 5 is taken as a threshold, and *any independent variable with VIF > 5 will have to be removed*, due to problematic amount of collinearity.
 
 The VIF values for under.five.deaths, infant.deaths, thinness.10.19.years, thinness.5.9.years and Income.composition.of.resources have high values (> 5) that indicate collinearity problem. Therefore, we've decided to remove them from the model.
 
@@ -1270,10 +1306,24 @@ The VIF values for under.five.deaths, infant.deaths, thinness.10.19.years, thinn
 cols_to_remove <- c("under.five.deaths", "infant.deaths", "thinness.10.19.years", "thinness.5.9.years", "Income.composition.of.resources")
 X_colnames_reduced <- X_colnames[!(X_colnames %in% cols_to_remove)]
 
-
 full_lm_low_vif <- lm(train[,Y_colname] ~ ., data = train[, X_colnames_reduced])
 summary(full_lm_low_vif)
 ```
+```{r, echo=FALSE}
+mse <- mean((test$Life.expectancy - predict(full_lm_low_vif, newdata = test))^2)
+
+new_row <- data.frame(Model_name = 'MLR - No multicollinearity',
+                      Adj_R2 = summary(full_lm_low_vif)$adj.r.squared,
+                      AIC = AIC(full_lm_low_vif),
+                      BIC = BIC(full_lm_low_vif),
+                      n_coef = length(coefficients(full_lm_low_vif)),
+                      MSE = mse,
+                      RMSE = sqrt(mse),
+                      n_RMSE_sd = sqrt(mse) / sd(test$Life.expectancy),
+                      n_RMSE_range = sqrt(mse)/diff(range(test$Life.expectancy)))
+df_metrics_regression <- rbind(df_metrics_regression, new_row)
+```
+
 As we can see after removing columns with high VIF, the R-squared value decreased. However, it is important to note that the primary goal of removing variables with high VIF is to address the issue of collinearity and improve the model's reliability and interpretability. We expect the adjusted model to be more appropriate for analysis and inference.
 
 Let’s now have a look at the diagnostic plots.
@@ -1283,16 +1333,16 @@ par(mfrow=c(2,2))
 plot(full_lm_low_vif)
 ```
 
-Fitted vs Residual graph\
+**Fitted vs Residual graph**\
 The red line is very close to zero and the spread of the residuals is approximately the same across the x axis, so we have no discernible non-linear trends or indications of non-constant variance.
 
-Normal Q-Q Plot\
-The residuals deviate from the diagonal line in both the upper and lower tail. This plot indicates that the tails are ‘lighter’ (have smaller values) than what we would expect under the standard modeling assumptions.
+**Normal Q-Q Plot**\
+After removing columns with high VIF, it is evident that the heteroscedasticity problem has improved. The deviation is not as serious anymore. However, the residuals still deviate from the diagonal line in both the upper and lower tails. This plot suggests that the tails have smaller values than what we would anticipate under the standard modeling assumptions, indicating a "lighter" distribution.
 
-Scale-Location\
-The red line deviates just a little from horizontal, showing very small presence of heteroskedasticity.
+**Scale-Location**\
+This plot has also improved. The red line deviates only slightly from the horizontal, indicating a very small presence of heteroscedasticity.
 
-Residuals vs Leverage\
+**Residuals vs Leverage**\
 In this plot we see no evidence of outliers. The “Cook’s distance” dashed curves don’t even appear on the plot. None of the points come close to having both high residual and leverage.
 
 
@@ -1300,15 +1350,14 @@ In this plot we see no evidence of outliers. The “Cook’s distance” dashed 
 
 Next, we can explore approaches to reduce the variance of the model, namely backward and forward model selection. Empirically, backward selection tends to perform better in this regard. However, we also retain the forward selection method for comparison purposes.
 
-
-```{r, echo=FALSE}
+```{r}
 nvmax <- 26 # 2 x number of variables
 
 forward_sel_lm = regsubsets(train[,Y_colname] ~., data = train[, X_colnames_reduced], method = 'forward', nvmax = nvmax)
 backward_sel_lm = regsubsets(train[,Y_colname] ~., data = train[, X_colnames_reduced], method = 'backward', nvmax = nvmax)
 ```
 
-```{r, echo=FALSE}
+```{r}
 plot_max_point <- function(values){
   max_idx = which.max(values)
   points(max_idx, values[max_idx], col = 'red', cex = 2, pch = 20)
@@ -1398,7 +1447,6 @@ plot(backward_sel_lm, scale = 'Cp')
 
 Based on the regsubsets plot, we reach the same conclusion as before. Therefore, we will proceed with removing the variables "Population" and "Total.expenditure" from our model. After removing these variables, we will retrain the multiple linear regressor using the updated set of features.
 
-
 ```{r}
 cols_to_remove <- c("Population", "Total.expenditure")
 X_colnames_reduced_featureSel <- X_colnames_reduced[!(X_colnames_reduced %in% cols_to_remove)]
@@ -1406,32 +1454,60 @@ X_colnames_reduced_featureSel <- X_colnames_reduced[!(X_colnames_reduced %in% co
 featureSel_lm <- lm(train[,Y_colname] ~ ., data = train[, X_colnames_reduced_featureSel])
 summary(featureSel_lm)
 ```
+
+```{r, echo=FALSE}
+mse <- mean((test$Life.expectancy - predict(featureSel_lm, newdata = test))^2)
+
+new_row <- data.frame(Model_name = 'MLR - Feature selection',
+                      Adj_R2 = summary(featureSel_lm)$adj.r.squared,
+                      AIC = AIC(featureSel_lm),
+                      BIC = BIC(featureSel_lm),
+                      n_coef = length(coefficients(featureSel_lm)),
+                      MSE = mse,
+                      RMSE = sqrt(mse),
+                      n_RMSE_sd = sqrt(mse) / sd(test$Life.expectancy),
+                      n_RMSE_range = sqrt(mse)/diff(range(test$Life.expectancy)))
+df_metrics_regression <- rbind(df_metrics_regression, new_row)
+```
+
 The variance explained by the model is 83.33%, which is nearly identical to the previous result (83.34%) achieved with the full model that included all variables except those displaying multicollinearity issues.
 
 ```{r}
 hist(featureSel_lm$residuals)
 ```
+
 The histogram of the residuals exhibits a pattern that closely resembles a normal distribution. However, let's also check the QQ plot.
 
 ```{r}
 plot(featureSel_lm, which = 2)
 ```
-We can observe that the distribution has "fat" tails - both the ends of the Q-Q plot deviate from the straight line and its center follows a straight line. We refer to this as positive kurtosis (a measure of “Tailedness”).
 
-Shapiro Test
+We can observe that the distribution has "fat" tails - both the ends of the Q-Q plot deviate from the straight line and its center follows a straight line. We refer to this as positive kurtosis (a measure of “tailedness”).
+
+**Addressing heteroskedasticity**
 
 ```{r}
 shapiro.test(residuals(featureSel_lm))
 ```
-In the context of the Shapiro-Wilk test, the null hypothesis is that the data is normally distributed. Since the p-value is significantly small (2.916e-11 << 0.05), it suggests strong evidence to reject the null hypothesis. Therefore, based on these results, it can be inferred that the residuals do not follow a normal distribution.
+In the context of the Shapiro-Wilk test, the null hypothesis is that the data is normally distributed. Since the p-value is significantly small (<< 0.05), it suggests strong evidence to reject the null hypothesis. Therefore, based on these results, it can be inferred that *the residuals do not follow a normal distribution*.
 
+```{r}
+bptest(featureSel_lm)
+```
 
-#### Data Transformation
+```{r}
+ncvTest(featureSel_lm)
+```
 
-To transform the data, we will apply the log transformation. Since there are 0s present in the data, we will use the formula log(1+x) to handle these values appropriately. We will only consider the variables that were selected earlier using multicollinearity check and feature selection. Initially, we exclude the binary variable "Status" when computing the log transformation. However, we will add it back later to enhance the linear model.
+Both the Breusch-Pagan test and the Non-constant Variance Score Test indicate strong evidence against the null hypothesis of constant variance of the residuals. Both tests provide strong evidence supporting the presence of heteroskedasticity in the regression model.
+
+**Data Transformation**
+
+To address the issue of constant variance of the residuals, let's attempt to mitigate it through data transformation. Transforming the data is the go-to approach to remove heteroskedasticity. The goal is to stabilize the variance and to bring the distribution closer to the Normal distribution. The log is an effective transformation to do this. Taking the square root or cubic root are two possible alternatives.
+
+Previously, we made attempts to address outliers through data transformation, but unfortunately, it did not yield any improvement. Now, let's focus on utilizing a log transformation to address the non-normality of residuals. Since there are 0s present in the data, we will use the formula log(1+x) to handle these values appropriately. We will only consider the variables that were selected earlier using multicollinearity check and feature selection. Initially, we exclude the binary variable "Status" when computing the log transformation. However, we will add it back later to enhance the linear model.
 
 Additionally, we attempted using the square root transformation but did not observe any significant improvement in the model's performance.
-
 
 ```{r}
 X_colnames_reduced_featureSel_noStatus <- X_colnames_reduced_featureSel[!X_colnames_reduced_featureSel %in% "Status"]
@@ -1443,16 +1519,93 @@ train_log$Status <- train$Status
 log_featureSel_lm <- lm(Life.expectancy ~ ., data = train_log)
 summary(log_featureSel_lm)
 ```
+
 ```{r}
 hist(log_featureSel_lm$residuals)
 ```
-
-
 
 ```{r}
 shapiro.test(residuals(log_featureSel_lm))
 ```
 From the analysis of the histogram of the residuals and the results of the Shapiro-Wilk test, it can be concluded that the data transformation did not effectively address the issue of non-normality in the residuals. The residuals continue to deviate from the assumption of normality.
+
+*Based on our analysis, we can conclude that a slight issue of heteroscedasticity still persists. However, the departure from normality, as observed from the histograms, is not severe. Moreover, considering the sufficiently large sample size, we can still rely on the reliability of our analysis.*
+
+The linear model appears to be suitable for predicting Life.expectancy based on the Adj. R-Squared value. It successfully *passed 2 out of 4 Assumption Checks, namely the Multicollinearity and Linearity Test*, although it did not meet the criteria for Normality and Homoscedasticity.
+
+The Linear Model effectively captures the linear relationship between Life.expectancy and the chosen independent variables. However, it is important to acknowledge the model's sensitivity to outliers, which were prevalent in the initial dataset.
+
+Here is a summary of all of the models tested so far:
+
+```{r}
+df_metrics_regression[order(-df_metrics_regression$Adj_R2), ]
+```
+
+As we can see from the table above, we have tested a total of four models (excluding the log transformation model). Below, we can also observe the bar graphs for each model, representing different evaluation metrics. The models exhibit varying levels of explanatory power.
+
+Among the tested models, the multiple linear regression model has the highest adjusted R-squared, indicating a better fit to the data compared to the other models. However, it is important to note that this model also includes features with a high level of multicollinearity, which can compromise its reliability.
+
+Considering this multicollinearity issue, we can turn our attention to the model obtained using backward feature selection. This model exhibits a slightly lower adjusted R-squared value but offers a favorable trade-off between goodness of fit and complexity. Moreover, the model displays low values of AIC and BIC, suggesting that it strikes a good balance between performance and simplicity.
+
+
+```{r}
+# Bar graph for Adj_R2
+ggplot(df_metrics_regression, aes(x = Model_name, y = Adj_R2, fill = Model_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(Adj_R2, 2)), vjust = 2.5) +
+  labs(x = "Model", y = "Adj_R2") +
+  ggtitle("Adjusted R-Squared Comparison") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
+# Bar graph for AIC
+ggplot(df_metrics_regression, aes(x = Model_name, y = AIC, fill = Model_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(AIC, 2)), vjust = 2.5) +
+  labs(x = "Model", y = "AIC") +
+  ggtitle("AIC Comparison") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
+# Bar graph for BIC
+ggplot(df_metrics_regression, aes(x = Model_name, y = BIC, fill = Model_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(BIC, 2)), vjust = 2.5) +
+  labs(x = "Model", y = "BIC") +
+  ggtitle("BIC Comparison") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
+# Bar graph for n_coef
+ggplot(df_metrics_regression, aes(x = Model_name, y = n_coef, fill = Model_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n_coef), vjust = 2.5) +
+  labs(x = "Model", y = "Number of Coefficients") +
+  ggtitle("Number of Coefficients Comparison") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
+# Bar graph for MSE
+ggplot(df_metrics_regression, aes(x = Model_name, y = MSE, fill = Model_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(MSE, 2)), vjust = 2.5) +
+  labs(x = "Model", y = "MSE") +
+  ggtitle("MSE Comparison") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
+```
+
+
+```{r, echo=FALSE}
+# Sort the dataframe based on F1_score in descending order
+df_metrics_regression <- df_metrics_regression[order(df_metrics_regression$Adj_R2, decreasing = TRUE), ]
+
+df_metrics_regression <- df_metrics_regression[df_metrics_regression$Model_name == "MLR - Feature selection", ]
+
+# Keep just Model name and MSE columns
+df_metrics_regression <- df_metrics_regression[, !(names(df_metrics_regression) %in% c("Adj_R2", "AIC", "BIC", "n_coef"))]
+```
 
 
 ### Ridge regression
@@ -1469,7 +1622,7 @@ prepare_ridge_lasso <- function(X, Y, alpha){
   plot(model, label=TRUE)
 
   set.seed(1)
-  cv.out <- cv.glmnet(X, Y, alpha = alpha, nfold=10, type.measure = "mse") # Add lambda = grid,
+  cv.out <- cv.glmnet(X, Y, alpha = alpha, nfold=10, type.measure = "mse", lambda = grid)
   
   plot(cv.out)
   
@@ -1491,19 +1644,39 @@ ridge_res = prepare_ridge_lasso(X = X,
                                 alpha = 0  # Ridge
                                 )
 ```
+
 ```{r}
 ridge_model <- ridge_res$model
 ridge_lambda <- ridge_res$lambda
 test$Status  <- as.numeric(test$Status) - 1
 ridge_pred <- predict(ridge_model,
                       s = ridge_lambda,
-                      newx = as.matrix(test[, X_colnames_reduced_featureSel])
-                      )
-mean((ridge_pred - test$Life.expectancy)^2)
+                      newx = as.matrix(test[, X_colnames_reduced_featureSel]))
+ridge_mse <- mean((ridge_pred - test$Life.expectancy)^2)
+ridge_mse
 ```
 
-The value of best lambda is equal to 0.7588397
-MSE with the best lambda: 28.65004
+The value of best lambda is equal to 0.09326033
+MSE with the best lambda: 28.65416
+
+```{r, echo=FALSE}
+new_row <- data.frame(Model_name = 'Ridge regression',
+                      MSE = ridge_mse,
+                      RMSE = sqrt(ridge_mse),
+                      n_RMSE_sd = sqrt(ridge_mse) / sd(test$Life.expectancy),
+                      n_RMSE_range = sqrt(ridge_mse)/diff(range(test$Life.expectancy))
+                      )
+df_metrics_regression <- rbind(df_metrics_regression, new_row)
+```
+
+```{r, echo=FALSE}
+predictors <- data.matrix(train[, !(names(train) %in% "Life.expectancy")])
+
+best_model <- glmnet(predictors, train$Life.expectancy, alpha = 1, lambda = ridge_lambda)
+coef(best_model)
+```
+
+
 
 ### Lasso regression
 
@@ -1521,50 +1694,84 @@ lasso_pred <- predict(lasso_model,
                       s = lasso_lambda,
                       newx = as.matrix(test[, X_colnames_reduced_featureSel])
                       )
-mean((lasso_pred - test$Life.expectancy)^2)
+lasso_mse <- mean((lasso_pred - test$Life.expectancy)^2)
+lasso_mse
 ```
-
-The value of best lambda is equal to: 0.02161203
+The value of best lambda is equal to: 0.01
 MSE with the best lambda: 22.82819
-
 
 We can see that the value of MSE of the lasso model is better than the ridge regularization model. So, we can conclude that the model with the L1 regularization term has slightly better predicting capabilities.
 
+```{r, echo=FALSE}
+predictors <- data.matrix(train[, !(names(train) %in% "Life.expectancy")])
 
-### Homoscedasticity - not satisfied
-
-```{r}
-bptest(featureSel_lm)
-```
-```{r}
-ols_test_breusch_pagan(featureSel_lm)
-```
-
-```{r}
-ncvTest(featureSel_lm)
-```
-
-Using 2 different function to test the homoscedasticity, we still get conclusion that the residuals variance is not constant.
-
-
-The linear model appears to be suitable for predicting Life.expectancy based on the Adj. R-Squared value. It successfully passed 2 out of 4 Assumption Checks, namely the Multicollinearity and Linearity Test, although it did not meet the criteria for Normality and Homoscedasticity.
-
-The Linear Model can effectively capture the linear relationship between Life.expectancy and the chosen independent variables. Nevertheless, it's crucial to acknowledge that this model is particularly sensitive to outliers, which were prevalent in the initial dataset.
-
-### Independence of residuals - okay
-
-```{r}
-durbinWatsonTest(featureSel_lm)
+best_model <- glmnet(predictors, train$Life.expectancy, alpha = 1, lambda = lasso_lambda)
+coef(best_model)
 ```
 
 
-TODO: Add comparison of models
+```{r, echo=FALSE}
+new_row <- data.frame(Model_name = 'Lasso regression',
+                      MSE = lasso_mse,
+                      RMSE = sqrt(lasso_mse),
+                      n_RMSE_sd = sqrt(lasso_mse) / sd(test$Life.expectancy),
+                      n_RMSE_range = sqrt(lasso_mse)/diff(range(test$Life.expectancy)))
+df_metrics_regression <- rbind(df_metrics_regression, new_row)
+```
 
-- Bar graph for different statistics of models and a table summary
+```{r}
+df_metrics_regression[order(df_metrics_regression$MSE), ]
+```
+```{r}
+ggplot(df_metrics_regression, aes(x = reorder(Model_name, MSE), y = MSE, fill = Model_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(MSE, 2)), vjust = 2.5) +
+  labs(x = "Model", y = "MSE") +
+  ggtitle("MSE Comparison") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+```
 
-TODO: Add best model summary
-- Discuss the results obtained from the summary (check Anna B.'s analysis)
-- Discuss whether the assumption checks are met
+Here, once again, we can observe that the model obtained using backward feature selection performs the best. It exhibits the lowest Mean Squared Error (MSE) on the test set when compared to the Lasso and Ridge regression models. Let's rerun its summary and interpret the results.
+
+```{r}
+summary(featureSel_lm)
+```
+
+Finally, let's interpret the results achieved by the best model.
+
+The model's performance is indicated by the multiple R-squared value of 0.8333, which means that approximately 83.33% of the variance in the response variable can be explained by the predictors in the model. The adjusted R-squared value, which accounts for the number of predictors in the model, is 0.8325.
+
+The F-statistic for the model is 1062, with a p-value of < 2.2e-16, indicating that the model as a whole is statistically significant in explaining the variation in the response variable.
+
+The residual standard error of the model is 3.886, which represents the average difference between the observed and predicted values of the response variable.
+
+Also, the model provides insights into the relationships between the predictors and the response variable, allowing us to make interpretations and draw conclusions about the factors influencing the response variable. Here is a summary of the relationships between the predictors and the response variable:
+
+1. StatusDeveloping: Being in a developing status is associated with a decrease in Life Expectancy on average.
+
+2. Adult Mortality: An increase in adult mortality is associated with a decrease in Life Expectancy on average.
+
+3. Alcohol: Higher alcohol consumption is associated with an increase in Life Expectancy on average.
+
+4. Percentage Expenditure: An increase in percentage expenditure is associated with an increase in Life Expectancy on average.
+
+5. Hepatitis B: Higher Hepatitis B vaccination coverage is associated with a decrease in Life Expectancy on average.
+
+6. Measles: For each unit increase in measles cases, Life Expectancy is expected to decrease on average.
+
+7. Polio: Higher Polio vaccination coverage is associated with an increase in Life Expectancy on average.
+
+8. Diphtheria: Higher Diphtheria vaccination coverage is associated with an increase in Life Expectancy on average.
+
+9. HIV/AIDS: A higher prevalence of HIV/AIDS is associated with a decrease in Life Expectancy on average.
+
+10. GDP: An increase in GDP is associated with an increase in Life Expectancy on average.
+
+11. Schooling: An increase in schooling years is associated with an increase in Life Expectancy on average.
+
+In summary, these findings were logical to us, and they highlight the impact of various factors on Life Expectancy. Factors such as adult mortality, vaccination coverage, disease prevalence, socioeconomic indicators, and lifestyle choices, like alcohol consumption, play a significant role in shaping Life Expectancy outcomes.
+
 
 
 
@@ -2351,10 +2558,10 @@ new_row <- data.frame(Model_name = Model_name,
 df_metrics <- rbind(df_metrics, new_row)
 ```
 
-
 ```{r}
 df_metrics[order(-df_metrics$F1_score, -df_metrics$AUC), ]
 ```
+
 In our final analysis, we have chosen to prioritize the F1 score as a significant metric, especially for evaluating models with unbalanced datasets. Additionally, we have incorporated the AUC metric to gauge overall model performance. Taking into account the values of these two metrics, we have identified the top-performing models as follows:
 
 1. Logistic Regression - Reduced
