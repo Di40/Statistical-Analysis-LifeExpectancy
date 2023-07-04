@@ -47,8 +47,14 @@ library(MLmetrics)
 library(pROC)
 library(PRROC)
 library(vcd)
+library(kableExtra)
+library(RColorBrewer)
+
 ```
-## Why is it important to have knowledge about life expectancy?
+
+## **Project Description**
+
+### **Introduction**
 
 > Understanding life expectancy, which refers to the average duration a person is projected to live, holds significance as it serves as a comprehensive measure of community well-being. Factors such as elevated infant mortality rates, increased occurrences of suicide, limited access to quality healthcare, and other determinants can contribute to lower life expectancies. In addition, life expectancy finds various applications in the financial domain, encompassing areas such as life insurance, pension planning, and Social Security benefits.
 
@@ -64,7 +70,7 @@ Bank Loans:
  - Mortgage and Home Loans: Life expectancy prediction can be used to assess the risk associated with long-term loans such as mortgages. It helps lenders evaluate the probability of borrowers completing their loan terms based on their life expectancy. This information can influence loan approval decisions, interest rates, and loan terms.
  - Personal Loans: In cases where personal loans involve significant sums or extended repayment periods, life expectancy prediction can provide insights into the borrower's ability to repay the loan. It helps lenders evaluate the risk of default or early termination due to the borrower's life expectancy.
 
-## About the Dataset
+### **About the Dataset**
 
 The aim of this work is to analyze a dataset related to life expectancy. It contains data for 193 countries, in a span of 15 years, which has been collected from the WHO data repository website and its corresponding economic data was collected from United Nation website. We obtained this dataset from Kaggle and it is publicly available for educational purposes. (TODO: Fix fillowing sentence when done with the analysis) The analysis will consist of data cleaning, exploratory data analysis (EDA), a simple case of linear regression, a more complete study of multiple linear regression and finally a binary classification problem.
 
@@ -72,22 +78,25 @@ We start our project by loading the dataset from the local drive to a dataframe.
 
 ```{r, echo=FALSE}
 tryCatch({
-  LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
-  # LifeExp <- read.csv("C:/Users/marij/Desktop/Statistical-Analysis-LifeExpectancy/LifeExpectancyData.csv")
+  #LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
+  LifeExp <- read.csv("C:/Users/marij/Desktop/Statistical-Analysis-LifeExpectancy/LifeExpectancyData.csv")
   print("Dataset loaded.")
 }, error = function(e) {
   print(paste("An error occurred while loading the dataset:", conditionMessage(e)))
 })
 cat(paste("Number of rows: ", nrow(LifeExp), "| Number of columns: ", ncol(LifeExp)))
 ```
-Let's take a look at the first 5 rows:
+Let's take a look at the Dataset:
 
 ```{r}
-head(LifeExp, 5)
+kable(LifeExp) %>%
+  kable_styling() %>%
+  scroll_box(height = "300px")
 ```
 
 In order to perform a successful analysis, it is important to properly understand the variables presented in the data. As we saw above, the dataset contains 22 variables (features). Let's start by answering the following question:\
 - What does each variable mean and what type of variable is it (Nominal/Ordinal/Interval/Ratio)?
+
 
 ```{r, echo=FALSE}
 
@@ -132,14 +141,16 @@ knitr::kable(data_info, align = "l", col.names = c("Column Name", "Type", "Descr
 
 ```
 
+
 Let's check whether the columns of our dataframe correspond to the described types above. To do this, we use the command str() to look at the dataset structure:
+
 
 ```{r}
 str(LifeExp)
 ```
 The shown result corresponds to the given dataset description, which means that there were no problems when loading the data. So, we can begin the first part of our statistical analysis, which is data preparation (aka cleaning, wrangling).
 
-## Data Wrangling 
+## **Data Wrangling**
 
 In this section we will carry out the cleaning of the data. First of all we will check whether some of the variables have missing values (in the form of NaN, NA and Null). If so, we will try to answer: what should be done about them? We will determine whether some columns shall be removed and whether some can be modified or created. After, we will focus our efforts on determining outliers and ways to deal with them.
 
@@ -157,7 +168,7 @@ LifeExp$Status  <- as.factor(LifeExp$Status)
 
 str(LifeExp)
 ```
-### Checking unique values
+### **Checking unique values**
 
 Let's have a look at the unique values in our dataset.\
 We do this just to double check that number of unique values corresponds to the dataset's description.
@@ -175,7 +186,7 @@ for (i in 1 : ncol(LifeExp)) {
 ```
 
 
-### Missing Values
+### **Missing Values**
 
 To address missing values, the following steps can be taken:\
 1. Detection of missing values:
@@ -221,7 +232,7 @@ It's important to note that these are assumptions based on the provided summary 
 
 To gain a deeper understanding of these values, let's visualize them using boxplots for each variable.
 
-```{r}
+```{r, fig.align = "center"}
 par(mfrow = c(2, 3))
 variables <- c('Adult.Mortality', 'infant.deaths', 'BMI', 'under.five.deaths', 'GDP', 'Population')
 
@@ -253,6 +264,7 @@ cat(num_na_before, sum(colSums(is.na(LifeExp))))
 
 As we can see, we increased the number of missing values from 2563 to 5763. There seems to be a significant number of null values in the dataset. For now, it might be helpful to analyze separately just the columns that contain nulls to gain more insights. The following function aims to achieve this. It identifies and presents the columns that have explicit null values, tracks the total count of such columns along with their positions in the dataframe, and provides the count and percentage of nulls for each specified column.
 
+
 ```{r}
 nulls_breakdown <- function(df) {
   df_cols <- colnames(df)
@@ -275,7 +287,7 @@ nulls_breakdown <- function(df) {
 nulls_breakdown(LifeExp)
 ```
 
-#### Dealing with missing values
+#### **Dealing with missing values**
 
 Given that approximately half of the values in the BMI variable are null, we decided that it would be the best to exclude this variable from the analysis.
 
@@ -311,7 +323,7 @@ nulls_breakdown(LifeExp)
 As we can see the missing values have been successfully handled using the interpolation method. We can now proceed to address the issue of outliers. Outliers can have a significant impact on data analysis and modeling, and it is important to identify and handle them appropriately.
 
 
-### Outlier analysis
+### **Outlier analysis**
 
 Outlier analysis is an essential step in exploring and understanding life expectancy data. It helps ensure data quality, identify anomalies and patterns, improve statistical analysis, inform policy decisions, and enhance data visualization and reporting.
 Outliers increase the error variance and reduce the power of statistical tests. They can cause bias and/or influence estimates. They can also impact the basic assumption of regression as well as other statistical models.
@@ -329,39 +341,15 @@ Similar to missing values, to address the presence of outliers in the data, seve
 Each of these steps aims to identify, assess, and appropriately handle the outliers in the dataset to ensure robust analysis and accurate interpretations.
 
 
-#### Outlier detection
+#### **Outlier detection**
+
 
 For each continuous variable in the dataset, a boxplot will be generated, displaying the median, quartiles, and any potential outliers. Additionally, histograms will be created to visualize the frequency distribution of the variable.
 
 By examining these plots, we can visually inspect the data and determine if there are any data points that deviate significantly from the majority of the observations, indicating the presence of potential outliers.
 
-ToDo: Improve the plots here. Idea: place the boxplot above/bellow the histogram - combo plot.
 
-```{r}
-cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
-num_vars <- length(cont_vars)
-num_rows <- ceiling(sqrt(num_vars))
-num_cols <- ceiling(num_vars / num_rows)
-
-par(oma = c(0, 0, 0, 0))
-
-par(mfrow = c(num_rows, num_cols))
-
-for (i in 1:num_vars) {
-  col <- cont_vars[i]
-  
-  # Reduce the inner margins to make the plots larger
-  par(mar = c(2, 2, 1, 1))
-  
-  boxplot(LifeExp[, col], horizontal = TRUE, col = rgb(0.8, 0.8, 0, 0.5), frame = FALSE, main = paste(col))
-  
-  # Increase the inner margins for the histogram to make it taller
-  par(mar = c(4, 2, 1, 1))
-  
-  hist(LifeExp[, col], col = rgb(0.2, 0.8, 0.5, 0.5), main = paste(col), xlab = "")
-}
-```
-```{r,echo = FALSE, message=FALSE}
+```{r,echo = FALSE, message=FALSE, fig.align = "center"}
 
 p1 <- ggplot(LifeExp, aes(x=Life.expectancy)) +
 geom_histogram(aes(y = ..density..),
@@ -554,6 +542,7 @@ grid.arrange(p9, b9,p10, b10, p11, b11, p12, b12, p14, b14,p15, b15, p17, b17, p
 
 Visually inspecting the data, it is evident that there are several outliers present in the variables, including the target variable (life expectancy). To statistically identify outliers, *Tukey's method* can be applied. This method defines outliers as values that lie outside 1.5 times the interquartile range (IQR). By calculating the quartiles and IQR for each variable, the upper and lower bounds can be determined, and any values outside these bounds can be classified as outliers.
 
+
 ```{r, echo=FALSE}
 LifeExp_copy <- LifeExp
 ```
@@ -580,7 +569,7 @@ kable(outliers_df, format = "markdown")
 There seem to be a considerable number of outliers present in this dataset. Now that they have been identified, a question arises: What course of action should be taken regarding them?
 
 
-#### Dealing with Outliers
+#### **Dealing with Outliers**
 
 There are several approaches to handling outliers in a dataset, and the typical options are as follows:
 
@@ -639,7 +628,7 @@ test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = F
 ```
 
 
-```{r,echo = FALSE, message=FALSE}
+```{r,echo = FALSE, message=FALSE, fig.align = "center"}
 
 
 b1 <- ggplot(LifeExp, aes(x=Life.expectancy)) +
@@ -796,39 +785,58 @@ xlab("Income per resources")
 grid.arrange(b1_old, b1,b3_old, b3, b14_old, b14, b15_old, b15, ncol = 2)
 ```
 
-Let's also compare the before and after distributions of some of our variables
+Let's also compare the before and after distributions of some of our variables.
+We can see that the top two graphs (Life Expectancy and Schooling) along with Alcohol, Hepatitis.B, Total.expenditure, that we decide not to show for simplicity, kept the same distribution even after Winsorization. On the opposite case the bottom two graphs (GDP and Polio) along with infant.deaths,percentage.expenditure,Measles, under.five,deaths, drastically changed after Winsorization. 
 
-```{r}
+
+```{r, fig.align = "center"}
 p1 <- ggplot() +
-  geom_density(data = LifeExp_copy, aes(x = Life.expectancy), color = 5, lwd = 1.2) +
-  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, lwd = 0.8) +
+  geom_density(data = LifeExp_copy, aes(x = Life.expectancy), color = 5, linewidth = 1.2) +
+  geom_density(data = LifeExp, aes(x = Life.expectancy), color = 2, linewidth = 1, linetype = "twodash") +
   xlab("Life Expectancy Winsorization")
 
 p2 <- ggplot() +
-  geom_density(data = LifeExp_copy, aes(x = infant.deaths), color = 5, lwd = 1.2) +
-  geom_density(data = LifeExp, aes(x = infant.deaths), color = 2, lwd = 0.8) +
-  xlab("Infant Deaths Winsorization")
+  geom_density(data = LifeExp_copy, aes(x = Schooling), color = 5, linewidth = 1.2) +
+  geom_density(data = LifeExp, aes(x = Schooling), color = 2, linewidth = 1, linetype = "twodash") +
+  xlab("Schooling Winsorization")
 
 p3 <- ggplot() +
-  geom_density(data = LifeExp_copy, aes(x = GDP), color = 5, lwd = 1.2) +
-  geom_density(data = LifeExp, aes(x = GDP), color = 2, lwd = 0.8) +
+  geom_density(data = LifeExp_copy, aes(x = GDP), color = 5, linewidth = 1.2) +
+  geom_density(data = LifeExp, aes(x = GDP), color = 2, linewidth = 1, linetype = "twodash") +
   xlab("GDP Winsorization")
 
 p4 <- ggplot() +
-  geom_density(data = LifeExp_copy, aes(x = Population), color = 5, lwd = 1.2) +
-  geom_density(data = LifeExp, aes(x = Population), color = 2, lwd = 0.8) +
-  xlab("Population Winsorization")
+  geom_density(data = LifeExp_copy, aes(x = Polio), color = 5, linewidth = 1.2) +
+  geom_density(data = LifeExp, aes(x = Polio), color = 2, linewidth = 1, linetype = "twodash") +
+  xlab("Polio Winsorization")
 
-grid.arrange(p1,p2,p3,p4, ncol = 2)
+# Combine the plots using grid.arrange
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+
 ```
 
 
+## **Exploratory Data Analysis**
 
-## Exploratory Data Analysis
+Exploratory Data Analysis (EDA) is a crucial process that involves conducting preliminary investigations on data, utilizing summary statistics and visual representations. Its primary objective is to gain a comprehensive understanding of the data's quality and characteristics before delving into formal statistical modeling.
 
+EDA serves as a means to extract valuable insights from the data by:
 
-### Q1. Does the sample gives enough evidence to say that Developed countries have more average life expectancy than Developing countries?
-```{r}
+- Uncovering Patterns: EDA aids in revealing underlying patterns within the data, offering guidance on how it can be effectively modeled. By examining distributions, correlations, and trends, EDA assists in identifying potential relationships and dependencies among variables.
+
+- Inspiring New Directions: Through EDA, researchers gain inspiration for further scientific inquiries. By exploring various aspects of the data, unexpected relationships or intriguing phenomena may emerge, prompting researchers to pursue novel research directions and hypotheses.
+
+- Detecting Errors: EDA acts as a vigilant eye, capable of identifying evident errors or inconsistencies within the dataset. By visualizing data points, outliers, or illogical values, EDA helps ensure data integrity and accuracy.
+
+- Assessing Assumptions: EDA allows for the assessment of underlying assumptions required for formal analyses. By examining the distributional properties of variables, assessing normality, or exploring heterogeneity, EDA helps evaluate the plausibility of assumptions necessary for subsequent statistical modeling.
+
+In the following part we will be answering some questions related to our Dataset.
+
+### **Relevant Questions**
+
+#### **Q1. Can we say that Developed countries have more average life expectancy than Developing countries?**
+
+```{r, fig.align = "center"}
 ggplot(LifeExp, aes(x = Status, fill = Status)) +
   geom_bar(alpha = 0.6) +
   scale_fill_manual(values = c(2, 5)) +
@@ -840,7 +848,7 @@ ggplot(LifeExp, aes(x = Status, fill = Status)) +
 ```
 
 
-```{r}
+```{r, fig.align = "center"}
 ggplot(LifeExp, aes(x=Life.expectancy, fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "Life Expectancy by Status", x ="Life Expectancy", y="Density") +
@@ -860,25 +868,31 @@ Developing_X <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (
 Developed_Y <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (Status == "Developed"), FUN = mean)
 ```
 ```{r}
-head(Developing_X,5)
-head(Developed_Y,5)
+kable(Developing_X[1:5, ],format = "markdown")
+
+kable(Developed_Y[1:5, ],format = "markdown")
 ```
 
 ```{r}
 var.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy)
 ```
 
+
 The observed p-value is less than alpha(0.05 by default). Hence we reject the null hypothesis and accept the alternate statement that the variance of two populations is not equal.
+
 
 ```{r}
 t.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy, alternative = "greater", var.equal = FALSE)
 ```
 
-The final conclusion is that the null hypothesis is rejected against the alternative hypothesis as the p-value<0.05. Hence we conclude that life expectancy in developed countries is more than that of developing countries with 95% confidence.
 
-### Q2 Using the sample, test whether schooling years (average) has a significant impact on life expectancy?
+> The final conclusion is that the null hypothesis is rejected against the alternative hypothesis as the p-value<0.05. Hence we conclude that life expectancy in developed countries is more than that of developing countries with 95% confidence.
 
-Education creates awareness about healthy living. For example Vaccine hesitancy during this Covid-19 period, especially among the rural population, has highlighted the importance of education.
+
+
+#### **Q2. Is there a statistically significant relationship between the average number of schooling years and life expectancy?**
+
+Education creates awareness about healthy living. For example Vaccine hesitancy during this Covid-19 period, especially among the rural population, has highlighted the importance of education. Also educated choices regarding lifestyle and personal health is also influenced by the education level.
 
 We will be using the ANOVA test to test the significance of education on life expectancy. Here we will categorize countries into one of the three categories: ‘Low’ (≤8), ‘Medium’ (>8 and ≤12), ‘High’ (>12) depending upon the country’s average schooling years.
 
@@ -887,7 +901,7 @@ Firstly, we will group the data by country and find the average life expectancy 
 ```{r}
 Schooling_X <- aggregate(cbind(Life.expectancy, Schooling) ~ Country, data = LifeExp, FUN = mean)
 
-head(Schooling_X,5)
+kable(Schooling_X[1:5, ],format = "markdown")
 ```
 ```{r}
 x <- Schooling_X %>% filter(Schooling < 8.0)
@@ -905,19 +919,23 @@ y3$Education = 'High'
 
 ```{r}
 Schooling_Y <- data.frame(rbind(y1,y2,y3))
-head(Schooling_Y,5)
+kable(Schooling_Y[1:5, ],format = "markdown")
 ```
 
+
 Let's apply the ANOVA test.
+
 
 ```{r}
 Anova_Results <- aov(Life.expectancy ~ Education, data = Schooling_Y)
 summary(Anova_Results)
 ```
 
-From the ANOVA summary, we can see that the p-value (Pr(>F)) is slightly above the commonly used threshold of 0.05 (significance level). Therefore, there is weak evidence to suggest that the "Education" factor has a statistically significant effect on the response variable. However, since the p-value is close to 0.05, it is on the borderline of significance.
 
-### Q3 Check if countries that spend a higher proportion of their resources on human development have a higher life expectancy?
+> From the ANOVA summary, we can see that the p-value (Pr(>F)) is slightly above the commonly used threshold of 0.05 (significance level). Therefore, there is weak evidence to suggest that the "Education" factor has a statistically significant effect on the response variable. However, since the p-value is close to 0.05, it is on the borderline of significance.
+
+
+#### **Q3. Check if countries that spend a higher proportion of their resources on human development have a higher life expectancy?**
 
 The term "Income composition of resources" refers to a component of the Human Development Index (HDI), which is a measure used to assess the overall development and well-being of a country's population. The Income composition of resources specifically focuses on income-related indicators and their contribution to human development.
 
@@ -928,7 +946,7 @@ A higher value of the Income composition of resources index indicates a more equ
 Conversely, a lower value of the index indicates a more unequal income distribution, with a smaller proportion of the population having access to resources and opportunities for development. This suggests that income is concentrated in the hands of a smaller segment of the population.
 
 
-```{r}
+```{r, fig.align = "center"}
 life_expectancy_vs_incomecomp <- ggplot(LifeExp, aes(Income.composition.of.resources, Life.expectancy)) + geom_jitter(color = 2, alpha = 0.3)
 
 life_expectancy_vs_incomecomp
@@ -939,10 +957,10 @@ By this scatterplot we can see that The Income composition of resources and thei
 ```{r}
 in_comp_res <-aggregate(cbind(Life.expectancy, Income.composition.of.resources) ~ Country, data = LifeExp, FUN = mean)
 
-head(in_comp_res,5)
+kable(in_comp_res[1:5, ],format = "markdown")
 ```
 
-```{r}
+```{r, fig.align = "center"}
 ggscatter(in_comp_res, x = "Income.composition.of.resources", y = "Life.expectancy", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", xlab = "HDI (Income composition of resources)", ylab = "Life Expectancy")
 ```
 
@@ -950,9 +968,12 @@ ggscatter(in_comp_res, x = "Income.composition.of.resources", y = "Life.expectan
 cor.test(in_comp_res$Income.composition.of.resources,in_comp_res$Life.expectancy )
 ```
 
-A correlation coefficient of 0.8376092 indicates a strong positive linear relationship between the variables being correlated, therefore the countries with higher income composition of resources for human development have better life expectancy. Also the regression line explains 82% of variance in the data. Thus countries should spend more on the human development to achieve higher life expectancy.
 
-### Q4 Italian Government has claimed that they have spent an average of around 8.41% of their total expenditure on health for the year 2000–2015. Can we test their claim?
+> A correlation coefficient of 0.8376092 indicates a strong positive linear relationship between the variables being correlated, therefore the countries with higher income composition of resources for human development have better life expectancy. Also the regression line explains 84% of variance in the data.Thus countries should spend more on the human development to achieve higher life expectancy.
+
+
+
+#### **Q4 Italian Government has claimed that they have spent an average of around 8.41% of their total expenditure on health for the year 2000–2015. Can we test their claim?**
 
 We will use a One-Sample t-test and not a One-sample Z-test to test the claim since we have no information about the population variance.
 
@@ -967,6 +988,7 @@ t.test(Italy_Y, mu = 8.41, alternative = "two.sided")
 
 We decided to also test India's claim that they have spent an average of around 5.2% of their total expenditure on health for the year 2000–2015.
 
+
 ```{r}
 India_X <- LifeExp %>% filter (Country == "India")
 India_Y <- select(India_X,Total.expenditure)
@@ -974,19 +996,24 @@ India_Y <- select(India_X,Total.expenditure)
 t.test(India_Y, mu = 5.2, alternative = "two.sided")
 ```
 
-Since 5.2 doesn’t lie in the 95% confidence interval range [4.232587, 4.689913], we can say that the sample doesn’t give enough evidence to accept the claim made by the Indian Government. On the other hand Italy's claim of 8.4 lies in the 95% CI range of [8.320883 ,9.021617].
 
-### Q5 What are our oservations when comparing the proportions of the number of infant deaths and the number of under-five deaths.
+> Since 5.2 doesn’t lie in the 95% confidence interval range [4.232587, 4.689913], we can say that the sample doesn’t give enough evidence to accept the claim made by the Indian Government. On the other hand Italy's claim of 8.4 lies in the 95% CI range of [8.320883 ,9.021617].
+
+
+
+#### **Q5. What are our observations when comparing the proportions of the number of infant deaths and the number of under-five deaths.**
 
 We will conduct a two-proportions z-test to compare the two independent proportions.
 
 ```{r}
 Mort_X <- aggregate(cbind(Life.expectancy, infant.deaths, under.five.deaths) ~ Country, data = LifeExp, FUN = mean)
 
-head(Mort_X,5)
+kable(Mort_X[1:5, ],format = "markdown")
 
 ```
+
 infant_deaths column represents the number of infant deaths per 1000 population and similarly, under_five_deaths represents the number of under-five deaths per 1000 population. We have to use the average value of infant or under-five deaths of all the countries and take its ceiling value.
+
 ```{r}
 mortx <- ceiling(mean(Mort_X$infant.deaths))
 morty <- ceiling(mean(Mort_X$under.five.deaths))
@@ -996,20 +1023,22 @@ argy <- c(1000,1000)
 prop.test(argx,argy, correct = FALSE)
 ```
 
-Since the p- value is greater than 0.05, we see no significant difference in the two independent proportions.
+
+> Since the p- value is greater than 0.05, we see no significant difference in the two independent proportions.The data does not provide sufficient evidence to conclude that there is a meaningful or significant difference between the rates of infant deaths and under-five deaths.
 
 
-### Q6 What is the correlation of Life expectancy with Alcohol drinking habits ?
+
+#### **Q6. What is the correlation of Life expectancy with Alcohol drinking habits ?**
 
 Let's use the Person correlation test.
 
 ```{r}
 Alc_X <- aggregate(cbind(Life.expectancy, Alcohol) ~ Country, data = LifeExp, FUN = mean) 
 
-head(Alc_X,5)
+kable(Alc_X[1:5, ],format = "markdown")
 ```
 
-```{r}
+```{r, fig.align = "center"}
 ggscatter(Alc_X, x = "Alcohol", y = "Life.expectancy", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", xlab = "Alcohol consumption (in litres of pure alcohol", ylab = "Life Expectancy")
 ```
 
@@ -1017,34 +1046,37 @@ ggscatter(Alc_X, x = "Alcohol", y = "Life.expectancy", add = "reg.line", conf.in
 cor.test(Alc_X$Alcohol, Alc_X$Life.expectancy)
 ```
 
-The results indicate a statistically significant moderate positive linear relationship (correlation coefficient = 0.4323943) between alcohol consumption and life expectancy. This suggests that higher levels of alcohol consumption are associated with increased life expectancy, within the range of data analyzed. However,before jumping to conclusions we need to also take in consideration other factors.
+<b><i>The results indicate a statistically significant moderate positive linear relationship (correlation coefficient = 0.4323943) between alcohol consumption and life expectancy. This suggests that higher levels of alcohol consumption are associated with increased life expectancy, within the range of data analyzed.
+However,before jumping to conclusions we need to also take in consideration other factors.</b></i>
 
 Developed countries tend to have higher levels of alcohol consumption compared to developing countries. This can be attributed to various factors such as higher income levels, greater access to alcohol, more established alcohol industries, and different cultural norms surrounding alcohol. This was also our conclusion from our previous analysis where we concluded that life expectancy in developed countries is more than that of developing countries.
 
 Higher GDP at Developed countries can influence alcohol consumption patterns to some extent. As countries experience economic growth and an increase in GDP, there is often an associated rise in income levels and discretionary spending power. This can lead to increased alcohol consumption. 
 
+We can visualize these correlations on the following graphs.
 
-```{r}
+
+```{r, fig.align = "center"}
 ggplot(LifeExp, aes(x=Alcohol, fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "Alcohol consumption by Status", x ="Alcohol", y="Density") +
   scale_fill_manual(values = c(2, 5))
 ```
 
-```{r}
+```{r, fig.align = "center"}
 ggplot(LifeExp, aes(x=log(GDP), fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "GDP by Status", x ="GDP", y="Density") +
   scale_fill_manual(values = c(2, 5))
 ```
 
-```{r}
+```{r, fig.align = "center"}
 life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jitter(color = 2, alpha = 0.3)
 life_expectancy_vs_GDP 
 ```
 
 
-### Q7 Correlation between Life Expectancy and Immunization.
+#### **Q7. Correlation between Life Expectancy and Immunization.**
 
 In Covid-19 times we all have seen the importance of immunization against the virus to increase life expectancy. Can we show that immunization against Polio and Diphtheria has a significant effect on life expectancy?
 
@@ -1053,7 +1085,7 @@ We will use a two-way ANOVA test. Here we will divide the countries into two cat
 ```{r}
 Immun_X <- aggregate(cbind(Life.expectancy, Polio, Diphtheria) ~ Country, data = LifeExp, FUN = mean)
 
-head(Immun_X,5)
+kable(Immun_X[1:5, ],format = "markdown")
 ```
 ```{r}
 xx_1 <- Immun_X %>% filter(Polio <= 85)
@@ -1074,17 +1106,17 @@ zz4$Diphtheria = 'High'
 
 ```{r}
 Immun_Polio <- data.frame(rbind(zz1,zz2))
-head(Immun_Polio,5)
+kable(Immun_Polio[1:5, ],format = "markdown")
 ```
 
 ```{r}
 Immun_Diphtheria <- data.frame(rbind(zz3,zz4))
-head(Immun_Diphtheria,5)
+kable(Immun_Diphtheria[1:5, ],format = "markdown")
 ```
 
 ```{r}
 Immun_Y <- merge(Immun_Polio, Immun_Diphtheria, by = "Country")
-head(Immun_Y,5)
+kable(Immun_Y[1:5, ],format = "markdown")
 ```
 
 ```{r}
@@ -1092,9 +1124,13 @@ Anova_Results_1 <- aov(Life.expectancy.x ~ Polio + Diphtheria, data = Immun_Y)
 summary(Anova_Results_1)
 ```
 
-The p-value for both Polio and Diphtheria immunization coverage for one-year old is less than 0.05, hence we can say that immunization has a significant impact on the life expectancy.
 
-```{r}
+<b><i>The p-value for both Polio and Diphtheria immunization coverage for one-year old is less than 0.05, hence we can say that immunization has a significant impact on the life expectancy.</b></i>
+
+
+
+
+```{r, fig.align = "center"}
 life_expectancy_vs_Diphtheria  <- ggplot(LifeExp, aes(Diphtheria, Life.expectancy)) + geom_jitter(color = 5, alpha = 0.3)
                               
 life_expectancy_vs_Polio  <- ggplot(LifeExp, aes(Polio, Life.expectancy)) + geom_jitter(color = 2, alpha = 0.3)
@@ -1105,7 +1141,7 @@ plot_grid(title,p, ncol=1)
 ```
 
 
-## Constructing Correlation Matrix
+### **Constructing Correlation Matrix**
 
 ```{r}
 # Compute the correlation matrix
@@ -1113,13 +1149,16 @@ numeric_vars <- LifeExp[, sapply(LifeExp, is.numeric)]
 cor_matrix <- cor(numeric_vars)
 
 # Plot the correlation matrix using corrplot
-corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
+color_palette = brewer.pal(11, "PuOr")
+corrplot::corrplot(cor_matrix, method = "shade", type = "upper", tl.cex = 0.7, col = color_palette, tl.col = "black" )
+#corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7)
   
 # Adjust the text size
 
 ```
 
-#### Network plot
+
+#### **Network plot**
 
 ```{r}
 cor_matrix %>% corrr::network_plot(min_cor = .3)
