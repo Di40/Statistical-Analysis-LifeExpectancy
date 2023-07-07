@@ -13,9 +13,10 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 options(warn=-1)
+rm(list=ls())
 ```
 
-```{r, results="hide", message = FALSE, echo=FALSE}
+```{r, results="hide", message = FALSE, echo=FALSE, info=FALSE}
 library(ggplot2)
 library(ggpubr)
 library(GGally)
@@ -49,7 +50,8 @@ library(PRROC)
 library(vcd)
 library(kableExtra)
 library(RColorBrewer)
-
+library(igraph)
+library(MASS)
 ```
 
 
@@ -79,8 +81,8 @@ We start our project by loading the dataset from the local drive to a dataframe.
 
 ```{r, echo=FALSE}
 tryCatch({
-  #LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
-  LifeExp <- read.csv("C:/Users/marij/Desktop/Statistical-Analysis-LifeExpectancy/LifeExpectancyData.csv")
+  LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
+  # LifeExp <- read.csv("C:/Users/marij/Desktop/Statistical-Analysis-LifeExpectancy/LifeExpectancyData.csv")
   print("Dataset loaded.")
 }, error = function(e) {
   print(paste("An error occurred while loading the dataset:", conditionMessage(e)))
@@ -628,8 +630,6 @@ test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = F
 
 
 ```{r,echo = FALSE, message=FALSE, fig.align = "center"}
-
-
 b1 <- ggplot(LifeExp, aes(x=Life.expectancy)) +
 geom_boxplot(fill=2, alpha=0.2) +
 xlab("Life Expectancy")
@@ -710,7 +710,6 @@ b10_old <- ggplot(LifeExp_copy, aes(x=Polio)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("Polio")
 
-
 b11 <- ggplot(LifeExp, aes(x=Total.expenditure)) +
 geom_boxplot(fill=2, alpha=0.2) +
 xlab("Total.expenditure")
@@ -754,7 +753,6 @@ b15_old <- ggplot(LifeExp_copy, aes(x=Population)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("Population")
 
-
 b16 <- ggplot(LifeExp, aes(x=thinness.10.19.years)) +
 geom_boxplot(fill=2, alpha=0.2) +
 xlab("thinness.10.19.years")
@@ -771,7 +769,6 @@ xlab("thinness.5.9.years")
 b17_old <- ggplot(LifeExp_copy, aes(x=thinness.5.9.years)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("thinness.5.9.years")
-
 
 b18 <- ggplot(LifeExp, aes(x=Income.composition.of.resources)) +
 geom_boxplot(fill=2, alpha=0.2) +
@@ -811,7 +808,6 @@ p4 <- ggplot() +
 
 # Combine the plots using grid.arrange
 grid.arrange(p1, p2, p3, p4, ncol = 2)
-
 ```
 
 
@@ -854,7 +850,6 @@ ggplot(LifeExp, aes(x=Life.expectancy, fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "Life Expectancy by Status", x ="Life Expectancy", y="Density") +
   scale_fill_manual(values = c(2, 5))
-
 ```
 
 Due to our lack of knowledge regarding the population variance, we will employ a two-sample T-Test instead of a two-sample Z-Test in order to assess the equality of the two means. Prior to conducting the T-Test, it is necessary to determine whether the variances of the two populations are equal. To accomplish this, we will employ an F-Test.
@@ -862,14 +857,12 @@ Due to our lack of knowledge regarding the population variance, we will employ a
 To start, we will filter and group the data by country, allowing us to calculate the average life expectancy for each country over the span of 16 years.
 
 ```{r}
-
 Developing_X <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (Status == "Developing"), FUN = mean)
 Developed_Y <- aggregate(Life.expectancy ~ Country, data = LifeExp %>% filter (Status == "Developed"), FUN = mean)
 ```
 
 ```{r}
 kable(Developing_X[1:5, ],format = "markdown")
-
 kable(Developed_Y[1:5, ],format = "markdown")
 ```
 
@@ -915,7 +908,6 @@ y2 <- data.frame(Life.expectancy = y$Life.expectancy)
 y2$Education = 'Middle'
 y3 <- data.frame(Life.expectancy = z$Life.expectancy)
 y3$Education = 'High'
-
 ```
 
 ```{r}
@@ -961,7 +953,6 @@ By this scatter plot we can see that The Income composition of resources and the
 in_comp_res <-aggregate(cbind(Life.expectancy, Income.composition.of.resources) ~ Country, data = LifeExp, FUN = mean)
 
 kable(in_comp_res[1:5, ],format = "markdown")
-
 ```
 
 ```{r, fig.align = "center"}
@@ -986,7 +977,7 @@ Firstly, we will use a filter to obtain the data for ‘Italy’ and the Total.e
 
 ```{r}
 Italy_X <- LifeExp %>% filter (Country == "Italy")
-Italy_Y <- select(Italy_X,Total.expenditure)
+Italy_Y <- Italy_X$Total.expenditure
 
 t.test(Italy_Y, mu = 8.41, alternative = "two.sided")
 ```
@@ -996,7 +987,7 @@ We decided to also test India's claim that they have spent an average of around 
 
 ```{r}
 India_X <- LifeExp %>% filter (Country == "India")
-India_Y <- select(India_X,Total.expenditure)
+India_Y <- India_X$Total.expenditure
 
 t.test(India_Y, mu = 5.2, alternative = "two.sided")
 ```
@@ -1014,7 +1005,6 @@ We will conduct a two-proportions z-test to compare the two independent proporti
 Mort_X <- aggregate(cbind(Life.expectancy, infant.deaths, under.five.deaths) ~ Country, data = LifeExp, FUN = mean)
 
 kable(Mort_X[1:5, ],format = "markdown")
-
 ```
 
 
@@ -1067,7 +1057,6 @@ Higher GDP at Developed countries can influence alcohol consumption patterns to 
 We can visualize these correlations on the following graphs.
 
 ```{r, fig.align = "center"}
-
 ggplot(LifeExp, aes(x=Alcohol, fill=Status)) +
     geom_density(alpha=.5) +
     labs(title  = "Alcohol consumption by Status", x ="Alcohol", y="Density") +
@@ -1089,7 +1078,7 @@ life_expectancy_vs_GDP
 
 #### **Q7. Correlation between Life Expectancy and Immunization.**
 
-In Covid-19 times we all have seen the importance of immunization against the virus to increase life expectancy. Can we show that immunization against Polio and Diphtheria has a significant effect on life expectancy?
+In COVID-19 times we all have seen the importance of immunization against the virus to increase life expectancy. Can we show that immunization against Polio and Diphtheria has a significant effect on life expectancy?
 
 We will use a two-way ANOVA test. Here we will divide the countries into two categories for both Polio and Diphtheria. Countries having values of % immunization coverage for one-year-old greater than the median value will get category ‘High’ else ‘Low’.
 
@@ -1162,8 +1151,6 @@ cor_matrix <- cor(numeric_vars)
 # Plot the correlation matrix using corrplot
 color_palette = brewer.pal(11, "PuOr")
 corrplot::corrplot(cor_matrix, method = "shade", type = "upper", tl.cex = 0.7, col = color_palette, tl.col = "black" )
-
-
 ```
 
 
@@ -1179,45 +1166,45 @@ Because there are a lot of variables included in the network plot visualization 
 #### **Star Graph**
 
 ```{r}
-# # Subset the relevant variables for the star graph
-# numeric_vars_1 <- numeric_vars[, c("Life.expectancy", "infant.deaths", "Alcohol",
-#                             "percentage.expenditure", "Hepatitis.B", "Measles",
-#                             "under.five.deaths", "Polio", "Total.expenditure",
-#                             "Diphtheria", "GDP", "Population",
-#                             "thinness.10.19.years", "thinness.5.9.years",
-#                             "Income.composition.of.resources", "Schooling")]
-# 
-# # Calculate the correlation matrix
-# cor_matrix_1 <- cor(numeric_vars_1, use = "pairwise.complete.obs")
-# 
-# # Extract the correlation values for "Life.Expectancy"
-# cor_values <- cor_matrix_1[1, -1]
-# 
-# # Create a star graph
-# graph <- graph.star(n = length(cor_values) + 1, mode = "undirected")
-# 
-# # Set the vertex attributes
-# V(graph)$name <- colnames(numeric_vars_1)
-# V(graph)$size <- c(5, 10 + 40 * abs(cor_values))
-# 
-# # Set the edge attributes (thickness based on correlation strength)
-# E(graph)$width <- abs(cor_values) * 5
-# 
-# # Set the layout for visualization
-# layout <- layout.star(graph)
-# 
-# # Set the size of the plot
-# plot_size <- c(15, 15)  # Adjust the dimensions as needed
-# 
-# # Plot the star graph with increased size
-# plot(graph, layout = layout, edge.arrow.size = 0.5, vertex.size = V(graph)$size,
-#      vertex.label.color = "black", vertex.label.font = 2, edge.width = E(graph)$width,
-#      xlim = c(-1, 1), ylim = c(-1, 1), asp = 1, frame.plot = FALSE, main = "Correlation Graph",
-#      vertex.label.dist = 1.5, vertex.label.cex = 0.8, cex = 0.8, cex.main = 1.2, cex.lab = 0.9,
-#      cex.axis = 0.8, vertex.color = "lightblue", vertex.frame.color = "black", vertex.shape = "circle",
-#      vertex.label.family = "sans", vertex.label.just = c(0.5, 0.5), vertex.label.degree = 0,
-#      bg = "white", pch = 21, lty = 1, col = "black", bg = "white", rescale = FALSE,
-#      width = plot_size[1], height = plot_size[2])
+# Subset the relevant variables for the star graph
+numeric_vars_1 <- numeric_vars[, c("Life.expectancy", "infant.deaths", "Alcohol",
+                            "percentage.expenditure", "Hepatitis.B", "Measles",
+                            "under.five.deaths", "Polio", "Total.expenditure",
+                            "Diphtheria", "GDP", "Population",
+                            "thinness.10.19.years", "thinness.5.9.years",
+                            "Income.composition.of.resources", "Schooling")]
+
+# Calculate the correlation matrix
+cor_matrix_1 <- cor(numeric_vars_1, use = "pairwise.complete.obs")
+
+# Extract the correlation values for "Life.Expectancy"
+cor_values <- cor_matrix_1[1, -1]
+
+# Create a star graph
+graph <- graph.star(n = length(cor_values) + 1, mode = "undirected")
+
+# Set the vertex attributes
+V(graph)$name <- colnames(numeric_vars_1)
+V(graph)$size <- c(5, 10 + 40 * abs(cor_values))
+
+# Set the edge attributes (thickness based on correlation strength)
+E(graph)$width <- abs(cor_values) * 5
+
+# Set the layout for visualization
+layout <- layout.star(graph)
+
+# Set the size of the plot
+plot_size <- c(15, 15)  # Adjust the dimensions as needed
+
+# Plot the star graph with increased size
+plot(graph, layout = layout, edge.arrow.size = 0.5, vertex.size = V(graph)$size,
+     vertex.label.color = "black", vertex.label.font = 2, edge.width = E(graph)$width,
+     xlim = c(-1, 1), ylim = c(-1, 1), asp = 1, frame.plot = FALSE, main = "Correlation Graph",
+     vertex.label.dist = 1.5, vertex.label.cex = 0.8, cex = 0.8, cex.main = 1.2, cex.lab = 0.9,
+     cex.axis = 0.8, vertex.color = "lightblue", vertex.frame.color = "black", vertex.shape = "circle",
+     vertex.label.family = "sans", vertex.label.just = c(0.5, 0.5), vertex.label.degree = 0,
+     bg = "white", pch = 21, lty = 1, col = "black", bg = "white", rescale = FALSE,
+     width = plot_size[1], height = plot_size[2])
 ```
 
 
@@ -1235,25 +1222,18 @@ However, considering the benefits of feature scaling, such as ensuring consisten
 Afterward, to ensure unbiased evaluations, we proceed by randomly partitioning our dataset into separate training and test sets. For models that require cross-validation, we will utilize a portion of the training set as a validation set.
 
 ```{r}
-train_percent <- 0.8
-test_percent <- 1 - train_percent
-num_rows <- nrow(LifeExp)
-train_size <- floor((train_percent) * num_rows)
+test <- LifeExp$Year %in% c('2015', '2014', '2013')
 
-set.seed(1)
+df_test <- LifeExp[test, ]
+df_train <- LifeExp[!test, ]
 
-train_indices <- sample.int(n = num_rows, size = train_size)
+test <- subset(df_test, select = -c(Year, Country))
+train <- subset(df_train, select = -c(Year, Country))
 
-train <- LifeExp[train_indices, !(names(LifeExp) %in% c("Country", "Year"))]
-test <- LifeExp[-train_indices, !(names(LifeExp) %in% c("Country", "Year"))]
-
-train <- train %>% mutate(across(where(is.numeric), scale))
-test <- test %>% mutate(across(where(is.numeric), scale))
-
-cat("Train size: ", train_size, "\nTest size: ", num_rows - train_size)
+cat("Train size: ", nrow(train)/nrow(LifeExp)*100, "\nTest size: ", nrow(test)/nrow(LifeExp)*100)
 
 Y_colname <- "Life.expectancy"
-X_colnames <- colnames(train)[colnames(train) != Y_colname]
+X_colnames <- colnames(test)[colnames(test) != Y_colname]
 ```
 
 ```{r}
@@ -1295,12 +1275,12 @@ new_row <- data.frame(Model_name = 'Simple linear regression',
 df_metrics_regression <- rbind(df_metrics_regression, new_row)
 ```
 
-The analysis reveals that the variable "Income.composition.of.resources" has a moderate-to-high level of explanatory power, as indicated by an R-squared value of 0.6248. This means that approximately 62.48% of the variability in life expectancy can be attributed to this variable.
+The analysis reveals that the variable "Income.composition.of.resources" has a moderate-to-high level of explanatory power, as indicated by an R-squared value of 0.6071. This means that approximately 60.71% of the variability in life expectancy can be attributed to this variable.
 
-Both the intercept and the coefficient associated with "Income.composition.of.resources" are highly significant, as indicated by the p-values being less than 0.05. The F-statistic also supports this finding, with a value of 3910 and an extremely low p-value, suggesting that the observed relationship is not due to chance.
+Both the intercept and the coefficient associated with "Income.composition.of.resources" are highly significant, as indicated by the p-values being less than 0.05. The F-statistic also supports this finding, with a value of 3676 and an extremely low p-value, suggesting that the observed relationship is not due to chance.
 
 The formula for the regression line can be expressed as follows:\
-Life.Expectancy = 41.2191 + 43.7221 * Income.composition.of.resources\
+Life.Expectancy = 42.9837 + 41.6751 * Income.composition.of.resources\
 and it is visualized bellow.
 
 ```{r}
@@ -1358,11 +1338,11 @@ pred <- predict(simple_lm, newdata = test)
 rmse <- sqrt(mean((test$Life.expectancy - pred)^2))
 normalized_rmse_std <- sqrt(mean((pred - test$Life.expectancy)^2)) / sd(test$Life.expectancy)
 normalized_rmse_range <- sqrt(mean((pred - test$Life.expectancy)^2)) / diff(range(test$Life.expectancy))
-cat("RMSE =", rmse)
-cat("\nNormalized RMSE (sd)    =", normalized_rmse_std)
-cat("\nNormalized RMSE (range) =", normalized_rmse_range)
+cat("RMSE =", round(rmse, 3))
+cat("\nNormalized RMSE (sd)    =", round(normalized_rmse_std, 3))
+cat("\nNormalized RMSE (range) =", round(normalized_rmse_range, 3))
 ```
-The normalized RMSE (sd) is 0.596, indicating that the model's predictions have an error of around 59.6 % of the standard deviation of the target variable. The normalized RMSE (range) is 0.128, suggesting that the model's predictions have an error of approximately 12.8% of the range of the target variable.
+The normalized RMSE (sd) is 0.53, indicating that the model's predictions have an error of around 53% of the standard deviation of the target variable. The normalized RMSE (range) is 0.107, suggesting that the model's predictions have an error of approximately 10.7% of the range of the target variable.
 
 ### Multiple linear regression
 
@@ -1388,7 +1368,7 @@ new_row <- data.frame(Model_name = 'Multiple linear regression',
 df_metrics_regression <- rbind(df_metrics_regression, new_row)
 ```
 
-The summary indicates that the residuals are symmetrically distributed, with a median almost equal to 0 (0.0793). We will examine the residuals more closely later. The full Linear regression model explains 84.99% of the variance associated with the response variable. The F-statistic is 733.3 (>> 1), and its p-value is nearly 0, providing clear evidence against the null hypothesis that all coefficients are equal to zero. This means that at least one variable is associated with the response. The p-values of the predictor variables allow us to determine their significance. Variables with lower p-values are more significant in relation to the response. Notably, features such as infant.deaths, Alcohol, under.five.deaths, and GDP are not statistically significant in our model.
+The summary indicates that the residuals are symmetrically distributed, with a median almost equal to 0 (0.054). We will examine the residuals more closely later. The full Linear regression model explains 84.95% of the variance associated with the response variable. The F-statistic is 746.5 (>> 1), and its p-value is nearly 0, providing clear evidence against the null hypothesis that all coefficients are equal to zero. This means that at least one variable is associated with the response. The p-values of the predictor variables allow us to determine their significance. Variables with lower p-values are more significant in relation to the response. Notably, features such as infant.deaths, Alcohol, under.five.deaths, and GDP are not statistically significant in our model.
 
 To check the multicollinearity in our data we will look at the **Variance Inflation Factors (VIF)**:
 
@@ -1452,7 +1432,7 @@ In this plot we see no evidence of outliers. The “Cook’s distance” dashed 
 Next, we can explore approaches to reduce the variance of the model, namely backward and forward model selection. Empirically, backward selection tends to perform better in this regard. However, we also retain the forward selection method for comparison purposes.
 
 ```{r}
-nvmax <- 26 # 2 x number of variables
+nvmax <- 2 * (length(full_lm_low_vif$coefficients) - 1) # 2 x number of variables
 
 forward_sel_lm = regsubsets(train[,Y_colname] ~., data = train[, X_colnames_reduced], method = 'forward', nvmax = nvmax)
 backward_sel_lm = regsubsets(train[,Y_colname] ~., data = train[, X_colnames_reduced], method = 'backward', nvmax = nvmax)
@@ -1504,7 +1484,7 @@ Both feature selection techniques yielded the same results. So, for simplicity, 
 plot_subsets_summary(backward_sel_lm)
 ```
 
-Based on the observed graphs, it is clear that different statistical measures, such as Cp, BIC, and Adjusted R-squared, produce varying results in the feature selection process. The use of Adjusted R-squared led to a model with one less variable compared to the original model. Cp resulted in the removal of two variables, while BIC suggested eliminating four variables from the model. Notably, Cp and AIC are equivalent and select the same model, hence we have focused on presenting the results based on Cp.
+From the graphs it is evident that different statistical measures, such as Cp, BIC, and Adjusted R-squared, share a consensus regarding the number of variables that should be chosen. All three measures advocate for the removal of three variables from the model, resulting in a reduction from 13 to 10 variables.
 
 ```{r}
 # Get the chosen variables according to each statistical measure
@@ -1530,11 +1510,13 @@ selected_vars_df <- selected_vars_df[-1, ]
 kable(selected_vars_df, row.names = FALSE)
 ```
 
-The feature selection algorithm consistently suggests that the variable "Total.expenditure" should be eliminated from the final model. This recommendation is supported by all three statistical measures. Furthermore, both Cp and BIC also favor removing the "Population" variable. From a practical standpoint, there are valid reasons for excluding these variables:
+The feature selection algorithm consistently suggests that the variables "Total.expenditure", "GDP" and "Population" should be eliminated from the final model. This recommendation is supported by all three statistical measures. From a practical standpoint, there are valid reasons for excluding these variables:
 
 1. Population: Including the population of a country in the model is unlikely to have a direct impact on life expectancy. Therefore, it can be deemed unnecessary for predicting life expectancy accurately.
 
 2. Total.expenditure: The information conveyed by the "Total.expenditure" variable is largely captured by the "percentage.expenditure" variable. Hence, including both variables in the model would introduce redundancy without significantly enhancing our understanding.
+
+3. GDP: The GDP variable, although highly informative, is partly captured by the variables percentage.expenditure, Status, and Schooling. Therefore, to rely on the feature selection method, we will exclude it from our model.
 
 By excluding these variables, the final model becomes more concise and interpretable without compromising the explained variance to a great extent. However, it is essential to verify the impact on explained variance before drawing a definitive conclusion.
 
@@ -1546,10 +1528,10 @@ plot(backward_sel_lm, scale = 'bic')
 plot(backward_sel_lm, scale = 'Cp')
 ```
 
-Based on the regsubsets plot, we reach the same conclusion as before. Therefore, we will proceed with removing the variables "Population" and "Total.expenditure" from our model. After removing these variables, we will retrain the multiple linear regressor using the updated set of features.
+Based on the regsubsets plot, we reach the same conclusion as before. Therefore, we will proceed with removing the variables "GDP", "Population" and "Total.expenditure" from our model. After removing these variables, we will retrain the multiple linear regressor using the updated set of features.
 
 ```{r}
-cols_to_remove <- c("Population", "Total.expenditure")
+cols_to_remove <- c("GDP", "Population", "Total.expenditure")
 X_colnames_reduced_featureSel <- X_colnames_reduced[!(X_colnames_reduced %in% cols_to_remove)]
 
 featureSel_lm <- lm(train[,Y_colname] ~ ., data = train[, X_colnames_reduced_featureSel])
@@ -1571,7 +1553,7 @@ new_row <- data.frame(Model_name = 'MLR - Feature selection',
 df_metrics_regression <- rbind(df_metrics_regression, new_row)
 ```
 
-The variance explained by the model is 83.33%, which is nearly identical to the previous result (83.34%) achieved with the full model that included all variables except those displaying multicollinearity issues.
+The variance explained by the model is 83.45%, which is nearly identical to the previous result (83.43%) achieved with the full model that included all variables except those displaying multicollinearity issues.
 
 ```{r}
 ggplot(data = featureSel_lm, aes(x = featureSel_lm$residuals)) +
@@ -1653,11 +1635,11 @@ Among the tested models, the multiple linear regression model has the highest ad
 Considering this multicollinearity issue, we can turn our attention to the model obtained using backward feature selection. This model exhibits a slightly lower adjusted R-squared value but offers a favorable trade-off between goodness of fit and complexity. Moreover, the model displays low values of AIC and BIC, suggesting that it strikes a good balance between performance and simplicity.
 
 
-```{r}
+```{r, warning=FALSE}
 # Bar graph for Adj_R2
 ggplot(df_metrics_regression, aes(x = Model_name, y = Adj_R2, fill = Model_name)) +
   geom_bar(stat = "identity") +
-  geom_text(aes(label = round(Adj_R2, 2)), vjust = 2.5) +
+  geom_text(aes(label = round(Adj_R2, 3)), vjust = 2.5) +
   labs(x = "Model", y = "Adj_R2") +
   ggtitle("Adjusted R-Squared Comparison") +
   theme(axis.text.x = element_blank()) +
@@ -1693,7 +1675,7 @@ ggplot(df_metrics_regression, aes(x = Model_name, y = n_coef, fill = Model_name)
 # Bar graph for MSE
 ggplot(df_metrics_regression, aes(x = Model_name, y = MSE, fill = Model_name)) +
   geom_bar(stat = "identity") +
-  geom_text(aes(label = round(MSE, 2)), vjust = 2.5) +
+  geom_text(aes(label = round(MSE, 3)), vjust = 2.5) +
   labs(x = "Model", y = "MSE") +
   ggtitle("MSE Comparison") +
   theme(axis.text.x = element_blank())+
@@ -1708,26 +1690,40 @@ df_metrics_regression <- df_metrics_regression[order(df_metrics_regression$Adj_R
 
 df_metrics_regression <- df_metrics_regression[df_metrics_regression$Model_name == "MLR - Feature selection", ]
 
-# Keep just Model name and MSE columns
-df_metrics_regression <- df_metrics_regression[, !(names(df_metrics_regression) %in% c("Adj_R2", "AIC", "BIC", "n_coef"))]
+df_metrics_regression <- df_metrics_regression[, !(names(df_metrics_regression) %in% c("AIC", "BIC", "n_coef"))]
 ```
 
 
 ### **Ridge regression**
 
-For the Ridge regression, it is necessary to standardize data. However, we already did this step.
+For the Ridge regression, it is necessary to standardize data.
 
-```{r, echo=FALSE}
+```{r}
+numeric_cols <- names(df_test)[sapply(df_test, is.numeric)]
+
+mean_test <- mean(test$Life.expectancy)
+std_test <- sd(test$Life.expectancy)
+
+train_scaled <- train
+test_scaled <- test
+
+train_scaled[, numeric_cols] <- scale(train[, numeric_cols])
+test_scaled[, numeric_cols] <- scale(test[, numeric_cols])
+```
+
+
+```{r}
 prepare_ridge_lasso <- function(X, Y, alpha){
-  grid <- 10^seq(10, -2, length=100)
+  #grid <- 10^seq(10, -2, length=100)
 
-  model <- glmnet(X, Y, alpha = alpha, standardize = F)
+  model <- glmnet(X, Y, alpha = alpha, standardize = T)
   # alpha = 0 for Ridge Regression
   # alpha = 1 for Lasso Regression
   plot(model, label=TRUE)
 
-  set.seed(1)
-  cv.out <- cv.glmnet(X, Y, alpha = alpha, nfold=10, type.measure = "mse", lambda = grid)
+  set.seed(123)
+
+  cv.out <- cv.glmnet(X, Y, alpha = alpha, nfold=10, type.measure = "mse") #, lambda = grid)
   
   plot(cv.out)
   
@@ -1754,18 +1750,28 @@ ridge_res = prepare_ridge_lasso(X = X,
 ridge_model <- ridge_res$model
 ridge_lambda <- ridge_res$lambda
 test$Status  <- as.numeric(test$Status) - 1
+
 ridge_pred <- predict(ridge_model,
                       s = ridge_lambda,
                       newx = as.matrix(test[, X_colnames_reduced_featureSel]))
+
 ridge_mse <- mean((ridge_pred - test$Life.expectancy)^2)
+
 ridge_mse
 ```
 
-The value of best lambda is equal to 0.09326033
-MSE with the best lambda: 28.65416
+The value of best lambda is equal to 0.7771478 
+MSE with the best lambda: 13.29373
 
 ```{r, echo=FALSE}
+residuals <- test$Life.expectancy - ridge_pred
+SSR <- sum(residuals^2)
+SST <- sum((test$Life.expectancy - mean(test$Life.expectancy))^2)
+p <- dim(test[, X_colnames_reduced_featureSel])[2]
+Adj_R2 <- 1 - (SSR / (length(test$Life.expectancy) - p - 1)) / (SST / (length(test$Life.expectancy) - 1))
+
 new_row <- data.frame(Model_name = 'Ridge regression',
+                      Adj_R2 = Adj_R2,
                       MSE = ridge_mse,
                       RMSE = sqrt(ridge_mse),
                       n_RMSE_sd = sqrt(ridge_mse) / sd(test$Life.expectancy),
@@ -1775,9 +1781,7 @@ df_metrics_regression <- rbind(df_metrics_regression, new_row)
 ```
 
 ```{r, echo=FALSE}
-predictors <- data.matrix(train[, !(names(train) %in% "Life.expectancy")])
-
-best_model <- glmnet(predictors, train$Life.expectancy, alpha = 1, lambda = ridge_lambda)
+best_model <- glmnet(X, Y, alpha = 0, lambda = ridge_lambda)
 coef(best_model)
 ```
 
@@ -1801,21 +1805,26 @@ lasso_pred <- predict(lasso_model,
 lasso_mse <- mean((lasso_pred - test$Life.expectancy)^2)
 lasso_mse
 ```
-The value of best lambda is equal to: 0.01
-MSE with the best lambda: 22.82819
+The value of best lambda is equal to: 0.02213345
+MSE with the best lambda: 13.44903
 
 We can see that the value of MSE of the lasso model is better than the ridge regularization model. So, we can conclude that the model with the L1 regularization term has slightly better predicting capabilities.
 
 ```{r, echo=FALSE}
-predictors <- data.matrix(train[, !(names(train) %in% "Life.expectancy")])
-
-best_model <- glmnet(predictors, train$Life.expectancy, alpha = 1, lambda = lasso_lambda)
+best_model <- glmnet(X, Y, alpha = 1, lambda = lasso_lambda)
 coef(best_model)
 ```
 
 
 ```{r, echo=FALSE}
+residuals <- test$Life.expectancy - lasso_pred
+SSR <- sum(residuals^2)
+SST <- sum((test$Life.expectancy - mean(test$Life.expectancy))^2)
+p <- dim(test[, X_colnames_reduced_featureSel])[2]
+Adj_R2 <- 1 - (SSR / (length(test$Life.expectancy) - p - 1)) / (SST / (length(test$Life.expectancy) - 1))
+
 new_row <- data.frame(Model_name = 'Lasso regression',
+                      Adj_R2 = Adj_R2,
                       MSE = lasso_mse,
                       RMSE = sqrt(lasso_mse),
                       n_RMSE_sd = sqrt(lasso_mse) / sd(test$Life.expectancy),
@@ -1824,19 +1833,30 @@ df_metrics_regression <- rbind(df_metrics_regression, new_row)
 ```
 
 ```{r}
-kable(df_metrics_regression[order(df_metrics_regression$MSE), ])
+kable(df_metrics_regression[order(df_metrics_regression$MSE)])
 ```
-```{r}
+
+```{r, warning=FALSE}
 ggplot(df_metrics_regression, aes(x = reorder(Model_name, MSE), y = MSE, fill = Model_name)) +
   geom_bar(stat = "identity") +
-  geom_text(aes(label = round(MSE, 2)), vjust = 2.5) +
+  geom_text(aes(label = round(MSE, 3)), vjust = 2.5) +
   labs(x = "Model", y = "MSE") +
   ggtitle("MSE Comparison") +
   theme(axis.text.x = element_blank()) + 
   scale_fill_manual(values = brewer.pal(11, "Blues"))
+
+ggplot(df_metrics_regression, aes(x = reorder(Model_name, Adj_R2), y = Adj_R2, fill = Model_name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(Adj_R2, 3)), vjust = 2.5) +
+  labs(x = "Model", y = "Adj_R2") +
+  ggtitle("Adj_R2 Comparison") +
+  theme(axis.text.x = element_blank()) + 
+  scale_fill_manual(values = brewer.pal(11, "Blues"))
 ```
 
-Here, once again, we can observe that the model obtained using backward feature selection performs the best. It exhibits the lowest Mean Squared Error (MSE) on the test set when compared to the Lasso and Ridge regression models. Let's rerun its summary and interpret the results.
+Based on the analysis, we can conclude that the model obtained using backward feature selection outperforms the regularized models. Although it has a slightly higher Mean Squared Error (MSE) compared to the regularized models, its Adjusted R-squared (Adj_R2) is significantly higher. Moreover, there were no signs of overfitting observed in this model. Therefore, we will proceed with the unregularized model.
+
+Let's rerun its summary and interpret the results.
 
 ```{r}
 summary(featureSel_lm)
@@ -1844,11 +1864,11 @@ summary(featureSel_lm)
 
 Finally, let's interpret the results achieved by the best model.
 
-The model's performance is indicated by the multiple R-squared value of 0.8333, which means that approximately 83.33% of the variance in the response variable can be explained by the predictors in the model. The adjusted R-squared value, which accounts for the number of predictors in the model, is 0.8325.
+The model's performance is indicated by the multiple R-squared value of 0.8352, which means that approximately 83.52% of the variance in the response variable can be explained by the predictors in the model. The adjusted R-squared value, which accounts for the number of predictors in the model, is 0.8345.
 
-The F-statistic for the model is 1062, with a p-value of < 2.2e-16, indicating that the model as a whole is statistically significant in explaining the variation in the response variable.
+The F-statistic for the model is 1200, with a p-value of << 0.05, indicating that the model as a whole is statistically significant in explaining the variation in the response variable.
 
-The residual standard error of the model is 3.886, which represents the average difference between the observed and predicted values of the response variable.
+The residual standard error of the model is 3.925, which represents the average difference between the observed and predicted values of the response variable.
 
 Also, the model provides insights into the relationships between the predictors and the response variable, allowing us to make interpretations and draw conclusions about the factors influencing the response variable. Here is a summary of the relationships between the predictors and the response variable:
 
@@ -1877,17 +1897,6 @@ Also, the model provides insights into the relationships between the predictors 
 In summary, these findings were logical to us, and they highlight the impact of various factors on Life Expectancy. Factors such as adult mortality, vaccination coverage, disease prevalence, socioeconomic indicators, and lifestyle choices, like alcohol consumption, play a significant role in shaping Life Expectancy outcomes.
 
 
-
-
-```{r}
-ctable <- as.table(matrix(c(42, 6, 8, 28), nrow = 2, byrow = TRUE))
-fourfoldplot(ctable, color = c("#CC6666", "#99CC99"),
-             conf.level = 0, margin = 1, main = "Confusion Matrix")
-```
-
-
-
-
 ## **Classification**
 
 In this section, we will address a *binary classification* problem. Our objective will be to determine whether a country's life expectancy is *below or above the (Italian) pension threshold of 67 years*. To approach this, we will generate a binary variable by using a threshold on the Life expectancy column. This parameter can be of great value to businesses, banks, and other industries seeking insights related to retirement planning.
@@ -1900,13 +1909,7 @@ LifeExp <- LifeExp %>% mutate(Pension_Status = ifelse(Life.expectancy < standard
 LifeExp[,"Pension_Status"] <- as.factor(LifeExp[,"Pension_Status"])
 LifeExp <- LifeExp[, !(names(LifeExp) %in% "Life.expectancy")]
 
-LifeExp$Country <- as.numeric(factor(LifeExp$Country, labels = unique(LifeExp$Country)))
-LifeExp$Year <- as.numeric(LifeExp$Year)
-LifeExp$Year <- LifeExp$Year - min(LifeExp$Year) + 2000
-
-LifeExp_scaled <- LifeExp %>% mutate(across(where(is.numeric), scale))
-
-prop.table(table(LifeExp_scaled$Pension_Status))
+prop.table(table(LifeExp$Pension_Status))
 ```
 Upon applying the threshold of 67 to the Life expectancy column, we observe that the resulting categories, "Above" and "Below," contain approximately 66% and 34% of the data, respectively. This indicates a noticeable level of class imbalance. Consequently, we will assess the potential impact of this imbalance on the performance of our classifiers. Nonetheless, we will be vigilant and employ suitable metrics specifically designed for evaluating models trained on unbalanced data.
 
@@ -1914,21 +1917,22 @@ We proceed by splitting our data into a training set and a test set. To accompli
 
 ```{r}
 ctrl <- trainControl(method = "cv", number = 5)
-test <- LifeExp_scaled$Year %in% c('2014', '2010', '2007', '2003')
-df_test <- LifeExp_scaled[test, ]
-df_train <- LifeExp_scaled[!test, ]
-test_proportion <- nrow(df_test) / nrow(LifeExp_scaled)
-cat('Training set dim:', dim(df_train), '\n')
-cat('Training set dim:', dim(df_test), '\n')
-cat('Training proportion:', 1-test_proportion, '\n')
-cat('Test proportion:', test_proportion)
+test <- LifeExp$Year %in% c('2015', '2014', '2013')
+df_test <- LifeExp[test, ]
+df_train <- LifeExp[!test, ]
+df_test <- subset(df_test, select = -c(Year, Country))
+df_train <- subset(df_train, select = -c(Year, Country))
+cat("Train size: ", nrow(df_train)/nrow(LifeExp)*100, "\nTest size: ", nrow(df_test)/nrow(LifeExp)*100)
+Y_colname <- "Life.expectancy"
+X_colnames <- colnames(test)[colnames(test) != Y_colname]
 ```
-As we can see, the train-test strategy resulted in a 75-25% split.
+As we can see, the train-test strategy resulted in a 81-19% split.
 
 ```{r}
 prop.table(table(df_train$Pension_Status))
 prop.table(table(df_test$Pension_Status))
 ```
+# ToDo
 What is more important is that both subsets contain an approximately equal distribution of the Pension Status categories.
 
 ```{r, output=FALSE}
@@ -1939,8 +1943,8 @@ df_metrics <- data.frame(Model_name = character(),
                          Precision = numeric(),
                          Recall = numeric(),
                          F1_score = numeric(),
-                         AUC = numeric())
-colnames(df_metrics) <- c("Model_name", "AIC", "McFaddens_R2", "Accuracy", "Precision", "Recall", "F1_score", "AUC")
+                         PR_AUC = numeric())
+colnames(df_metrics) <- c("Model_name", "AIC", "McFaddens_R2", "Accuracy", "Precision", "Recall", "F1_score", "PR_AUC")
 
 ```
 
@@ -1958,7 +1962,7 @@ glm_model <- train(form = Pension_Status ~ .,
                    family = "binomial")
 summary(glm_model)
 ```
-Some predictor variables, such as "Year", "Adult.Mortality", and "HIV.AIDS", have statistically significant coefficients (p < 0.05), suggesting a significant association with the likelihood of life expectancy being above or below the threshold.
+Some predictor variables, such as Adult.Mortality", "percentage.expenditure" and "HIV.AIDS", have statistically significant coefficients (p < 0.05), suggesting a significant association with the likelihood of life expectancy being above or below the threshold.
 Other predictor variables, such as "GDP" and "Population", do not show statistically significant associations (p > 0.05).
 
 ```{r, echo=FALSE, message=FALSE}
@@ -1975,9 +1979,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-glm_pred_probs <- predict(glm_model, newdata = df_test, type = "prob")
-glm_pred_probs_positive <- glm_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test$Pension_Status, glm_pred_probs_positive)$auc)
+glm_probs <- predict(glm_model, newdata = df_test, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = glm_probs$Above, scores.class1 = glm_probs$Below, curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -1986,7 +1989,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -1999,7 +2002,7 @@ Note: For the other classification algorithms, we will use both the full model a
 
 ```{r}
 # Select the most significant features based on the coefficient significance levels
-significant_features <- c("Year", "Adult.Mortality", "percentage.expenditure", "Measles", "Total.expenditure", "Diphtheria", "HIV.AIDS", "Income.composition.of.resources", "Schooling")
+significant_features <- c("Adult.Mortality", "percentage.expenditure", "Measles", "Polio", "Total.expenditure", "Diphtheria", "HIV.AIDS", "thinness.5.9.years", "Income.composition.of.resources", "Schooling")
 
 # Subset the training and test data using the significant features
 df_train_subset_glm <- df_train[, c("Pension_Status", significant_features)]
@@ -2014,7 +2017,8 @@ glm_reduced_model <- train(form = Pension_Status ~ .,
                            family = "binomial")
 summary(glm_reduced_model)
 ```
-We can see that AIC decreased from 863.01 to 862.2. Usually, when comparing two models, a difference of more than 2 in their AIC value is enough to say the model with the lower AIC is better. However, in our case this rule of thumb was not met. Therefore, we have decided to proceed with the full model. As a future work,  more sophisticated feature selection methods shall be explored. However, that was not one of the goals of this project.
+
+We can see that AIC increased from 929.45 to 930.9. Usually, when comparing two models, a difference of more than 2 in their AIC value is enough to say the model with the lower AIC is better. However, in our case this rule of thumb was not met. Therefore, we have decided to proceed with the full model. As a future work,  more sophisticated feature selection methods shall be explored. However, that was not one of the goals of this project.
 
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "Logistic regression - Reduced"
@@ -2030,9 +2034,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-glm_reduced_pred_probs <- predict(glm_reduced_model, newdata = df_test_subset_glm, type = "prob")
-glm_reduced_pred_probs_positive <- glm_reduced_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test_subset_glm$Pension_Status, glm_reduced_pred_probs_positive)$auc)
+pred_probs <- predict(glm_reduced_model, newdata = df_test_subset_glm, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2041,7 +2044,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2083,9 +2086,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-glm_rose_pred_probs <- predict(glm_rose_model, newdata = df_test, type = "prob")
-glm_rose_pred_probs_positive <- glm_rose_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test$Pension_Status, glm_rose_pred_probs_positive)$auc)
+pred_probs <- predict(glm_rose_model, newdata = df_test, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2094,7 +2096,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2130,9 +2132,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-glm_rose_reduced_pred_probs <- predict(glm_rose_reduced_model, newdata = df_test_subset_rose, type = "prob")
-glm_rose_reduced_pred_probs_positive <- glm_rose_reduced_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test_subset_rose$Pension_Status, glm_rose_reduced_pred_probs_positive)$auc)
+pred_probs <- predict(glm_rose_reduced_model, newdata = df_test_subset_rose, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2141,7 +2142,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2153,7 +2154,7 @@ balanced_data_ovun <- ovun.sample(Pension_Status ~ ., data = df_train, method = 
 # Can play with parameter p: probability of positive class in newly generated sample
 table(balanced_data_ovun$Pension_Status)
 ```
-We have achieved an almost ideal distribution of 0.504:0.496.
+We have achieved an almost ideal distribution of 0.506:0.494.
 
 ```{r}
 glm_ovun_model = train(form = Pension_Status ~ .,
@@ -2164,6 +2165,7 @@ glm_ovun_model = train(form = Pension_Status ~ .,
                        )
 summary(glm_ovun_model)
 ```
+
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "Logistic regression - Ovun"
 
@@ -2178,9 +2180,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-glm_pred_probs <- predict(glm_ovun_model, newdata = df_test, type = "prob")
-glm_pred_probs_positive <- glm_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test$Pension_Status, glm_pred_probs_positive)$auc)
+pred_probs <- predict(glm_ovun_model, newdata = df_test, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2189,7 +2190,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2224,9 +2225,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-ovun_reduced_pred_probs <- predict(ovun_reduced_model, newdata = df_test_subset_ovun, type = "prob", positive = "Above")
-ovun_reduced_pred_probs_positive <- ovun_reduced_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test_subset_ovun$Pension_Status, ovun_reduced_pred_probs_positive)$auc)
+pred_probs <- predict(ovun_reduced_model, newdata = df_test_subset_ovun, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2235,7 +2235,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2243,21 +2243,33 @@ df_metrics <- rbind(df_metrics, new_row)
 Let's now quickly compare the results of the unbalanced logistic regression with the two approaches used to balance the data.
 
 ```{r}
-kable(df_metrics[order(-df_metrics$F1_score, -df_metrics$AUC), ])
+# Sort the dataframe based on F1_score and PR_AUC columns
+sorted_df <- df_metrics[order(-df_metrics$F1_score, -df_metrics$PR_AUC), ]
+rounded_df <- sorted_df
+rounded_df[, -1] <- round(rounded_df[, -1], 3)
+kable(rounded_df)
 ```
 
-The unbalanced model performs remarkably well in comparison to the other models. It exhibits the lowest AIC value while maintaining evaluation metrics that are comparable to the models trained with balanced data.
+After evaluating the models, we found that they have comparable F1 scores. However, when considering the PR AUC value, the unbalanced model stands out and performs better than the other models.
 
-Both the Ovun.sample and ROSE approaches demonstrate similar performance. However, considering the lower AIC value and higher McFadden's R2, we would prefer the former over the latter.
+Comparing the Ovun.sample and ROSE approaches, we see that they exhibit similar performance. However, based on the lower AIC value and higher McFadden's R2, we would prefer the Ovun.sample approach over the ROSE approach.
 
-Also, we can observe that the set of selected features slightly improved the standard Logistic regression model, while the performance of the balanced models (using ROSE and Ovun) dropped.
+Additionally, when examining the impact of the selected features, we noticed a slight improvement in the F1 score of the standard Logistic regression model. However, it resulted in a decrease in the PR AUC value. Interestingly, when using the subset of selected features, the performance of the balanced models (ROSE and Ovun) dropped.
+
+Based on these findings, we will proceed with the classification analysis, focusing solely on the logistic regression model with the selected subset of features and excluding the other models from further consideration.
+
+Let's visualize its confusion matrix:
 
 ```{r}
-# Sort the dataframe based on F1_score in descending order
-df_metrics <- df_metrics[order(df_metrics$F1_score, decreasing = TRUE), ]
+glm_predictions <- predict(glm_reduced_model, df_test_subset_glm)
+cm <- confusionMatrix(data=glm_predictions, reference = df_test$Pension_Status)
+fourfoldplot(cm$table, color = c("#CC6666", "#99CC99"),      conf.level = 0, margin = 1, main = "Confusion Matrix")
+```
 
-# Keep the top two rows
-df_metrics <- df_metrics[1:2, ]
+
+```{r}
+# Filter the dataframe to keep only the row with Model_name "Logistic regression"
+df_metrics <- df_metrics[df_metrics$Model_name == "Logistic regression - Reduced", ]
 
 # Remove the columns "AIC" and "McFaddens_R2"
 df_metrics <- df_metrics[, !(names(df_metrics) %in% c("AIC", "McFaddens_R2"))]
@@ -2273,8 +2285,10 @@ nb_model <- naiveBayes(Pension_Status ~ ., data = df_train)
 
 # Confusion Matrix
 nb_pred <- predict(nb_model, newdata = df_test)
-table(df_test$Pension_Status, nb_pred)
+fourfoldplot(table(df_test$Pension_Status, nb_pred), color = c("#CC6666", "#99CC99"),
+             conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
+
 The results from the confusion matrix look decent. 
  
 ```{r, echo=FALSE, message=FALSE}
@@ -2288,8 +2302,7 @@ recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
 nb_pred_probs <- predict(nb_model, newdata = df_test, type = "raw")
-nb_pred_probs_positive <- nb_pred_probs[, "Above"]
-auc_nb <- as.numeric(roc(df_test$Pension_Status, nb_pred_probs_positive)$auc)
+pr_auc <- as.numeric(pr.curve(scores.class0 = nb_pred_probs[, "Above"], scores.class1 = nb_pred_probs[, "Below"], curve=T)$auc.integral)
 
 
 new_row <- data.frame(Model_name = Model_name,
@@ -2297,7 +2310,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc_nb)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row) 
 ``` 
@@ -2312,7 +2325,8 @@ nb_model_reduced <- naiveBayes(Pension_Status ~ ., data = df_train_subset_glm)
 
 # Confusion Matrix
 nb_reduced_pred <- predict(nb_model_reduced, newdata = df_test_subset_glm)
-table(df_test_subset_glm$Pension_Status, nb_reduced_pred)
+fourfoldplot(table(df_test_subset_glm$Pension_Status, nb_reduced_pred), color = c("#CC6666", "#99CC99"),
+             conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
 The confusion matrix shows an improvement compared to the previous results.
 
@@ -2328,16 +2342,15 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-nb_reduced_pred_probs <- predict(nb_model_reduced, newdata = df_test_subset_glm, type = "raw")
-nb_reduced_pred_probs_positive <- nb_reduced_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test_subset_glm$Pension_Status, nb_reduced_pred_probs_positive)$auc)
+nb_pred_probs <- predict(nb_model_reduced, newdata = df_test_subset_glm, type = "raw")
+pr_auc <- as.numeric(pr.curve(scores.class0 = nb_pred_probs[, "Above"], scores.class1 = nb_pred_probs[, "Below"], curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2368,9 +2381,8 @@ f1_score <- as.numeric(cm$byClass["F1"])
 
 auc_lda <- as.numeric(roc.curve(df_test$Pension_Status, lda_pred)$auc)
 
-lda_pred_probs <- predict(lda_model, newdata = df_test, type = "prob")
-lda_pred_probs_positive <- lda_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test$Pension_Status, lda_pred_probs_positive)$auc)
+pred_probs <- predict(lda_model, newdata = df_test, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 
 # Add new row to the df_metrics dataframe
@@ -2379,7 +2391,7 @@ new_row <- data.frame(Model_name = "Linear Discriminant Analysis",
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ``` 
@@ -2406,17 +2418,15 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-lda_reduced_pred_probs <- predict(lda_reduced_model, newdata = df_test_subset_glm, type = "prob")
-lda_reduced_pred_probs_positive <- lda_reduced_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test_subset_glm$Pension_Status, lda_reduced_pred_probs_positive)$auc)
-
+pred_probs <- predict(lda_reduced_model, newdata = df_test_subset_glm, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2433,8 +2443,9 @@ qda_model = train(form = Pension_Status ~ . - Status,
                   method = "qda")
 qda_model
 ```
+
 ```{r, echo=FALSE, message=FALSE}
-Model_name <- "Linear Discriminant Analysis"
+Model_name <- "Quadratic Discriminant Analysis"
 
 qda_pred <- predict(qda_model, newdata = df_test)
 cm <- confusionMatrix(data = qda_pred, reference = df_test$Pension_Status)
@@ -2444,9 +2455,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-qda_pred_probs <- predict(qda_model, newdata = df_test, type = "prob")
-qda_pred_probs_positive <- qda_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test$Pension_Status, qda_pred_probs_positive)$auc)
+pred_probs <- predict(qda_model, newdata = df_test, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 # Add new row to the df_metrics dataframe
 new_row <- data.frame(Model_name = Model_name,
@@ -2454,7 +2464,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ``` 
@@ -2491,7 +2501,7 @@ qda_reduced_model
 We can observe that QDA with a reduced feature subset performed better than the full model. When utilizing QDA, the model assumes that each class follows a quadratic decision boundary. However, this assumption may not hold true when there is a large number of features, as it increases the complexity of the decision boundary.
 
 ```{r, echo=FALSE, message=FALSE}
-Model_name <- "Quadratic Discriminant Analysis - Reduced"
+Model_name <- "QDA - Reduced"
 
 qda_reduced_pred <- predict(qda_reduced_model, newdata = df_test_subset_glm)
 cm <- confusionMatrix(data = qda_reduced_pred, reference = df_test_subset_glm$Pension_Status)
@@ -2501,9 +2511,8 @@ precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-qda_reduced_pred_probs <- predict(qda_reduced_model, newdata = df_test_subset_glm, type = "prob")
-qda_reduced_pred_probs_positive <- qda_reduced_pred_probs[, "Above"]
-auc <- as.numeric(roc(df_test_subset_glm$Pension_Status, qda_reduced_pred_probs_positive)$auc)
+pred_probs <- predict(qda_reduced_model, newdata = df_test_subset_glm, type = "prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
 
 
 new_row <- data.frame(Model_name = Model_name,
@@ -2511,7 +2520,7 @@ new_row <- data.frame(Model_name = Model_name,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
@@ -2521,9 +2530,18 @@ df_metrics <- rbind(df_metrics, new_row)
 To conclude the classification part, we will utilize a non-parametric classifier: k-NN (k-Nearest Neighbors).
 
 ```{r}
+numeric_cols <- names(df_test)[sapply(df_test, is.numeric)]
+
+df_train[, numeric_cols] <- scale(df_train[, numeric_cols])
+df_test[, numeric_cols] <- scale(df_test[, numeric_cols])
+
 df_train$Status <- as.numeric(df_train$Status)
 df_test$Status <- as.numeric(df_test$Status)
+```
 
+
+
+```{r}
 # Set the seed for reproducibility
 set.seed(123)
 
@@ -2552,49 +2570,47 @@ for (i in seq_along(k_values)) {
 best_k <- k_values[which.max(f1_scores)]
 cat("Best k value:", best_k, "\n")
 
-# Train the model on the entire training set using the best k
-final_knn_pred <- knn(train = df_train[, -ncol(df_train)],
-                      test  = df_test[, -ncol(df_test)],
-                      cl    = df_train$Pension_Status,
-                      k     = best_k
-)
-
-table(final_knn_pred, df_test$Pension_Status)
+final_model <- knn_model$finalModel
+final_knn_pred <- predict(final_model, newdata = df_test[, -ncol(df_test)], type="class")
+cm <- confusionMatrix(data=final_knn_pred, reference = df_test$Pension_Status)
+fourfoldplot(cm$table, color = c("#CC6666", "#99CC99"),
+             conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
-To determine the optimal number of neighbors (k), we conducted cross-validation using a range of values from 3 to $sqrt(n)$, where n is the number of training examples.
 
-In our case, the best value for k was found to be 27. However, it is worth noting that the k-NN classifier performs poorly when predicting the 'Below' class, displaying lower performance compared to random chance.
+To determine the optimal number of neighbors (k), we conducted cross-validation using a range of values from 3 to $sqrt(n)$, where n is the number of training examples. In our case, the best value for k was found to be 3.
 
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "K-Nearest Neighbors"
 
-cm_knn <- confusionMatrix(data = final_knn_pred, reference = df_test$Pension_Status)
+final_knn_pred <- predict(final_model, newdata = df_test[, -ncol(df_test)], type="class")
+cm_knn <- confusionMatrix(data=final_knn_pred, reference = df_test$Pension_Status)
 
 accuracy <- as.numeric(cm_knn$overall["Accuracy"])
 precision <- as.numeric(cm_knn$byClass["Precision"])
 recall <- as.numeric(cm_knn$byClass["Recall"])
 f1_score <- as.numeric(cm_knn$byClass["F1"])
 
-knn_pred_probs <- knn(train = df_train[, -ncol(df_train)],
-                      test  = df_test[, -ncol(df_test)],
-                      cl    = df_train$Pension_Status,
-                      k     = best_k,
-                      prob  = TRUE
-)
-
-auc <- as.numeric(roc.curve(df_test$Pension_Status, knn_pred_probs)$auc)
+knn_pred_probs <- predict(final_model, newdata = df_test[, -ncol(df_test)], type="prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = knn_pred_probs[,"Above"], scores.class1 = knn_pred_probs[,"Below"], curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
 
 Similarly as before, we will attempt to improve the performance of the k-NN classifier by utilizing the selected subset of features.
+
+```{r}
+numeric_cols <- names(df_test_subset_glm)[sapply(df_test_subset_glm, is.numeric)]
+
+df_train_subset_glm[, numeric_cols] <- scale(df_train_subset_glm[, numeric_cols])
+df_test_subset_glm[, numeric_cols] <- scale(df_test_subset_glm[, numeric_cols])
+```
 
 ```{r}
 # Set the seed for reproducibility
@@ -2623,61 +2639,60 @@ for (i in seq_along(k_values)) {
 best_k <- k_values[which.max(f1_scores)]
 cat("Best k value:", best_k, "\n")
 
-# Train the model on the entire training set using the best k
-final_knn_reduced_pred <- knn(train = df_train_subset_glm[, -1],
-                              test  = df_test_subset_glm[, -1],
-                              cl    = df_train_subset_glm$Pension_Status,
-                              k     = best_k)
-
-table(final_knn_reduced_pred, df_test_subset_glm$Pension_Status)
+final_model <- knn_reduced_model$finalModel
+final_knn_pred <- predict(final_model, newdata = df_test_subset_glm[, -1], type="class")
+cm <- confusionMatrix(data=final_knn_pred, reference = df_test_subset_glm$Pension_Status)
+fourfoldplot(cm$table, color = c("#CC6666", "#99CC99"),
+             conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
-Now, with the model selecting 11 as the optimal value for k, it is evident from the confusion matrix that the model's performance has significantly improved. In general, a lower number of features can be beneficial for k-NN classification. With a reduced feature set, the curse of dimensionality is mitigated, which can lead to improved performance of the k-NN algorithm. 
+The model's performance has slightly improved. In general, a lower number of features can be beneficial for k-NN classification. With a reduced feature set, the curse of dimensionality is mitigated, which can lead to improved performance of the k-NN algorithm. 
 
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "K-Nearest Neighbors - Reduced"
 
-cm <- confusionMatrix(data = final_knn_reduced_pred, reference = df_test_subset_glm$Pension_Status)
+final_knn_pred <- predict(final_model, newdata = df_test_subset_glm[, -1], type="class")
+cm <- confusionMatrix(data = final_knn_pred, reference = df_test_subset_glm$Pension_Status)
 
 accuracy <- as.numeric(cm$overall["Accuracy"])
 precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-knn_pred_probs <- knn(train = df_train_subset_glm[, -1],
-                      test  = df_test_subset_glm[, -1],
-                      cl    = df_train_subset_glm$Pension_Status,
-                      k     = best_k,
-                      prob  = TRUE
-)
-
-auc <- as.numeric(roc.curve(df_test_subset_glm$Pension_Status, knn_pred_probs)$auc)
+knn_pred_probs <- predict(final_model, newdata = df_test_subset_glm[, -1], type="prob")
+pr_auc <- as.numeric(pr.curve(scores.class0 = knn_pred_probs[,"Above"], scores.class1 = knn_pred_probs[,"Below"], curve=T)$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
                       Precision = precision,
                       Recall = recall,
                       F1_score = f1_score,
-                      AUC = auc)
+                      PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
 
+After evaluating the results and comparing the models trained on all features versus the reduced subset of features, it was found that the feature selection process did not significantly improve the performance for most models, except for Logistic Regression. Therefore, for our final analysis, we will exclude the models trained on the reduced feature subset.
+
 ```{r}
-kable(df_metrics[order(-df_metrics$F1_score, -df_metrics$AUC), ])
+# Sort the dataframe based on F1_score and PR_AUC columns
+sorted_df <- df_metrics[order(-df_metrics$PR_AUC, -df_metrics$F1_score), ]
+rounded_df <- sorted_df
+rounded_df[, -1] <- round(rounded_df[, -1], 3)
+rounded_df <- rounded_df[!rounded_df$Model_name %in% c("Naive Bayes - Reduced", "QDA - Reduced", "K-Nearest Neighbors - Reduced", "LDA - Reduced"), ]
+kable(rounded_df)
 ```
 
-In our final analysis, we have chosen to prioritize the F1 score as a significant metric, especially for evaluating models with unbalanced datasets. Additionally, we have incorporated the AUC metric to gauge overall model performance. Taking into account the values of these two metrics, we have identified the top-performing models as follows:
+In our final analysis, we have chosen to prioritize the PR_AUC and F1 score as most significant metrics, especially for evaluating models with unbalanced datasets. Taking into account the values of these two metrics, we have identified the top-performing models as follows:
 
 1. Logistic Regression - Reduced
 2. Linear Discriminant Analysis
-3. Quadratic Discriminant Analysis - Reduced
-4. Naive Bayes - Reduced
+3. K-Nearest Neighbors
 
-To determine the overall winner, it is important to carefully assess the strengths of each model in comparison to the others. The Logistic Regression - Reduced model displays superior performance in terms of both F1 score and AUC. This model exhibits good precision, recall, and accuracy, while effectively balancing false positives and false negatives. Additionally, its reduced feature set helps address the curse of dimensionality and improves computational efficiency.
+To determine the overall winner, it is important to carefully assess the strengths of each model in comparison to the others. The Logistic Regression - Reduced model displays superior performance in terms of both F1 score and PR AUC. This model exhibits good precision, recall, and accuracy, while effectively balancing false positives and false negatives. Additionally, its reduced feature set helps address the curse of dimensionality and improves computational efficiency.
 
 Moreover, the Logistic Regression - Reduced model offers the added advantage of being relatively straightforward to interpret, which can be valuable in certain scenarios.
 
-> In conclusion, considering the emphasis on F1 score and AUC, the Logistic Regression - Reduced model emerges as the potential winner due to its robust performance across multiple metrics. It not only achieves high predictive accuracy but also provides interpretability, making it an apt choice for our analysis.
+> In conclusion, considering the emphasis on F1 score and PR AUC, the Logistic Regression - Reduced model emerges as the potential winner due to its robust performance across multiple metrics. It not only achieves high predictive accuracy but also provides interpretability, making it an apt choice for our analysis.
 
 
 
