@@ -3,12 +3,12 @@ title: "Life Expectancy Statistical Analysis"
 author: "Marija Cveevska, Dejan Dichoski"
 date: "2023-05-24"
 output: 
+  pdf_document:
+    toc: yes
   html_document:
     keep_md: yes
     toc: yes
     df_print: kable
-  pdf_document:
-    toc: yes
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -75,7 +75,7 @@ Bank Loans:
 
 ### **About the Dataset**
 
-The aim of this work is to analyze a dataset related to life expectancy. It contains data for 193 countries, in a span of 15 years, which has been collected from the WHO data repository website and its corresponding economic data was collected from United Nation website. We obtained this dataset from Kaggle and it is publicly available for educational purposes. (TODO: Fix fillowing sentence when done with the analysis) The analysis will consist of data cleaning, exploratory data analysis (EDA), a simple case of linear regression, a more complete study of multiple linear regression and finally a binary classification problem.
+The aim of this work is to analyze a dataset related to life expectancy. It contains data for 193 countries, in a span of 15 years, which has been collected from the WHO data repository website and its corresponding economic data was collected from United Nation website. We obtained this dataset from Kaggle and it is publicly available for educational purposes. The analysis will consist of data cleaning, exploratory data analysis (EDA), a simple case of linear regression, a more complete study of multiple linear regression and finally a binary classification problem.
 
 We start our project by loading the dataset from the local drive to a dataframe.
 
@@ -1899,7 +1899,7 @@ In summary, these findings were logical to us, and they highlight the impact of 
 
 ## **Classification**
 
-In this section, we will address a *binary classification* problem. Our objective will be to determine whether a country's life expectancy is *below or above the (Italian) pension threshold of 67 years*. To approach this, we will generate a binary variable by using a threshold on the Life expectancy column. This parameter can be of great value to businesses, banks, and other industries seeking insights related to retirement planning.
+In this section, we will address a **binary classification** problem. Our objective will be to determine whether a country's life expectancy is **below or above the (Italian) pension threshold of 67 years**. To approach this, we will generate a binary variable by using a threshold on the Life expectancy column. This parameter can be of great value to businesses, banks, and other industries seeking insights related to retirement planning.
 
 The binary classification of life expectancy can be used to analyze the socioeconomic factors contributing to disparities in longevity. By examining countries below the pension threshold, researchers and organizations can gain insights into underlying causes, such as healthcare access, social support systems, economic conditions, and lifestyle factors. This knowledge can inform policies aimed at addressing disparities and improving public health.
 
@@ -1913,7 +1913,7 @@ prop.table(table(LifeExp$Pension_Status))
 ```
 Upon applying the threshold of 67 to the Life expectancy column, we observe that the resulting categories, "Above" and "Below," contain approximately 66% and 34% of the data, respectively. This indicates a noticeable level of class imbalance. Consequently, we will assess the potential impact of this imbalance on the performance of our classifiers. Nonetheless, we will be vigilant and employ suitable metrics specifically designed for evaluating models trained on unbalanced data.
 
-We proceed by splitting our data into a training set and a test set. To accomplish the split, we have designated the years 2014, 2010, 2007, and 2003 as the test set, while the remaining data will serve as the training set. This division allows us to evaluate the performance of our models on unseen data while using the majority of the data for training. In cases where necessary, we will further partition a portion of the training set to create a validation set.
+We proceed by splitting our data into a training set and a test set. To accomplish the split, we have designated the years 2013-2015 as the test set, while the remaining data will serve as the training set. This division allows us to evaluate the performance of our models on unseen data while using the majority of the data for training. In cases where necessary, we will further partition a portion of the training set to create a validation set.
 
 ```{r}
 ctrl <- trainControl(method = "cv", number = 5)
@@ -1932,8 +1932,7 @@ As we can see, the train-test strategy resulted in a 81-19% split.
 prop.table(table(df_train$Pension_Status))
 prop.table(table(df_test$Pension_Status))
 ```
-# ToDo
-What is more important is that both subsets contain an approximately equal distribution of the Pension Status categories.
+The test set is more unbalanced.
 
 ```{r, output=FALSE}
 df_metrics <- data.frame(Model_name = character(),
@@ -1962,8 +1961,7 @@ glm_model <- train(form = Pension_Status ~ .,
                    family = "binomial")
 summary(glm_model)
 ```
-Some predictor variables, such as Adult.Mortality", "percentage.expenditure" and "HIV.AIDS", have statistically significant coefficients (p < 0.05), suggesting a significant association with the likelihood of life expectancy being above or below the threshold.
-Other predictor variables, such as "GDP" and "Population", do not show statistically significant associations (p > 0.05).
+Some predictor variables, such as Adult.Mortality", "percentage.expenditure" and "HIV.AIDS", have statistically significant coefficients (p < 0.05), suggesting a significant association with the likelihood of life expectancy being above or below the threshold. Other predictor variables, such as "GDP" and "Population", do not show statistically significant associations (p > 0.05).
 
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "Logistic regression"
@@ -1980,7 +1978,8 @@ recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
 glm_probs <- predict(glm_model, newdata = df_test, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = glm_probs$Above, scores.class1 = glm_probs$Below, curve=T)$auc.integral)
+glm_pr_curve <- pr.curve(scores.class0 = glm_probs$Above, scores.class1 = glm_probs$Below, curve=T)
+pr_auc <- as.numeric(glm_pr_curve$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -1997,8 +1996,6 @@ df_metrics <- rbind(df_metrics, new_row)
 Next, we will proceed with creating a new model that incorporates only the predictors that have been found to be statistically significant. By including only these significant predictors, we aim to simplify the model, making it more interpretable and achieving a higher level of parsimony.
 
 Observation:  This approach does not introduce bias, as the significance level was determined solely based on analyzing the results of the training data.
-
-Note: For the other classification algorithms, we will use both the full model and the model with reduced features, as found here, since they seem reasonable to us for predicting our target variable.
 
 ```{r}
 # Select the most significant features based on the coefficient significance levels
@@ -2018,36 +2015,17 @@ glm_reduced_model <- train(form = Pension_Status ~ .,
 summary(glm_reduced_model)
 ```
 
-We can see that AIC increased from 929.45 to 930.9. Usually, when comparing two models, a difference of more than 2 in their AIC value is enough to say the model with the lower AIC is better. However, in our case this rule of thumb was not met. Therefore, we have decided to proceed with the full model. As a future work,  more sophisticated feature selection methods shall be explored. However, that was not one of the goals of this project.
+We can see that AIC increased from 929.45 to 930.9. Usually, when comparing two models, a difference of more than 2 in their AIC value is enough to say the model with the lower AIC is better. However, in our case this rule of thumb was not met. 
 
-```{r, echo=FALSE, message=FALSE}
-Model_name <- "Logistic regression - Reduced"
+Next we employ the ANOVA to test whether reducing the set of features improves the results and we compare the two models. Anova test in this case compares the deviances of the two models to assess whether the addition of additional predictor variables significantly improves the fit of the model. The test is performed by comparing the difference in deviance between the two models to a chi-square distribution.
 
-aic <- as.numeric(summary(glm_reduced_model)$aic)
-mcfaddens_r2 <- as.numeric(with(summary(glm_reduced_model), 1 - deviance/null.deviance))
-
-glm_predictions <- predict(glm_reduced_model, df_test_subset_glm)
-cm <- confusionMatrix(data=glm_predictions, reference = df_test_subset_glm$Pension_Status)
-
-accuracy <- as.numeric(cm$overal['Accuracy'])
-precision <- as.numeric(cm$byClass["Precision"])
-recall <- as.numeric(cm$byClass["Recall"])
-f1_score <- as.numeric(cm$byClass["F1"])
-
-pred_probs <- predict(glm_reduced_model, newdata = df_test_subset_glm, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
-
-new_row <- data.frame(Model_name = Model_name,
-                      AIC = aic,
-                      McFaddens_R2 = mcfaddens_r2,
-                      Accuracy = accuracy,
-                      Precision = precision,
-                      Recall = recall,
-                      F1_score = f1_score,
-                      PR_AUC = pr_auc)
-
-df_metrics <- rbind(df_metrics, new_row)
+```{r}
+anova(glm_model$finalModel, glm_reduced_model$finalModel, test="Chisq")
 ```
+
+The p-value indicates the statistical significance of the deviance difference. In this case, the p-value is less than the conventional significance level of 0.05, suggesting that there is a significant difference between the two models. Based on this analysis, we can conclude that Model 1, which includes additional predictors compared to Model 2, provides a significantly better fit to the data. The specific predictors included in Model 1 are: StatusDeveloping, infant.deaths, Alcohol, Hepatitis.B, under.five.deaths, GDP, Population, thinness.10.19.years.
+
+Therefore, we have decided to proceed with the full model. As a future work, more sophisticated feature selection methods shall be explored. However, that was not one of the goals of this project.
 
 #### **Balanced dataset**
 
@@ -2071,6 +2049,7 @@ glm_rose_model = train(form = Pension_Status ~ .,
                        family = "binomial")
 summary(glm_rose_model)
 ```
+
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "Logistic regression - ROSE"
 
@@ -2087,53 +2066,8 @@ recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
 pred_probs <- predict(glm_rose_model, newdata = df_test, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
-
-new_row <- data.frame(Model_name = Model_name,
-                      AIC = aic,
-                      McFaddens_R2 = mcfaddens_r2,
-                      Accuracy = accuracy,
-                      Precision = precision,
-                      Recall = recall,
-                      F1_score = f1_score,
-                      PR_AUC = pr_auc)
-
-df_metrics <- rbind(df_metrics, new_row)
-```
-
-Here, we will assess the performance of Logistic Regression utilizing the ROSE method and the selected features from above.
-
-```{r}
-# Subset the training and test data using the significant features
-df_train_subset_rose <- rose_balanced_data[, c("Pension_Status", significant_features)]
-df_test_subset_rose  <- rose_balanced_data[, c("Pension_Status", significant_features)]
-
-# Train the logistic regression model using the significant features
-
-glm_rose_reduced_model <- train(form = Pension_Status ~ .,
-                                data = df_train_subset_rose,
-                                trControl = ctrl,
-                                method = "glm",
-                                family = "binomial")
-summary(glm_rose_reduced_model)
-```
-
-```{r, echo=FALSE, message=FALSE}
-Model_name <- "Logistic regression - ROSE - Reduced"
-
-aic <- as.numeric(summary(glm_rose_reduced_model)$aic)
-mcfaddens_r2 <- as.numeric(with(summary(glm_rose_reduced_model), 1 - deviance/null.deviance))
-
-predictions_rose <- predict(glm_rose_reduced_model, df_test_subset_rose)
-cm <- confusionMatrix(data=predictions_rose, reference = df_test_subset_rose$Pension_Status)
-
-accuracy <- as.numeric(cm$overal['Accuracy'])
-precision <- as.numeric(cm$byClass["Precision"])
-recall <- as.numeric(cm$byClass["Recall"])
-f1_score <- as.numeric(cm$byClass["F1"])
-
-pred_probs <- predict(glm_rose_reduced_model, newdata = df_test_subset_rose, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
+rose_glm_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
+pr_auc <- as.numeric(rose_glm_pr_curve$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2181,52 +2115,8 @@ recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
 pred_probs <- predict(glm_ovun_model, newdata = df_test, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
-
-new_row <- data.frame(Model_name = Model_name,
-                      AIC = aic,
-                      McFaddens_R2 = mcfaddens_r2,
-                      Accuracy = accuracy,
-                      Precision = precision,
-                      Recall = recall,
-                      F1_score = f1_score,
-                      PR_AUC = pr_auc)
-
-df_metrics <- rbind(df_metrics, new_row)
-```
-
-Here, we will evaluate the performance of Logistic Regression using the Ovun package and the selected features from above.
-
-```{r}
-# Subset the training and test data using the significant features
-df_train_subset_ovun <- balanced_data_ovun[, c("Pension_Status", significant_features)]
-df_test_subset_ovun  <- balanced_data_ovun[, c("Pension_Status", significant_features)]
-
-# Train the logistic regression model using the significant features
-
-ovun_reduced_model <- train(form = Pension_Status ~ .,
-                           data = df_train_subset_ovun,
-                           trControl = ctrl,
-                           method = "glm",
-                           family = "binomial")
-summary(ovun_reduced_model)
-```
-```{r, echo=FALSE, message=FALSE}
-Model_name <- "Logistic regression - Ovun - Reduced"
-
-aic <- as.numeric(summary(ovun_reduced_model)$aic)
-mcfaddens_r2 <- as.numeric(with(summary(ovun_reduced_model), 1 - deviance/null.deviance))
-
-predictions_ovun <- predict(ovun_reduced_model, df_test_subset_ovun)
-cm <- confusionMatrix(data=predictions_ovun, reference = df_test_subset_ovun$Pension_Status)
-
-accuracy <- as.numeric(cm$overal['Accuracy'])
-precision <- as.numeric(cm$byClass["Precision"])
-recall <- as.numeric(cm$byClass["Recall"])
-f1_score <- as.numeric(cm$byClass["F1"])
-
-pred_probs <- predict(ovun_reduced_model, newdata = df_test_subset_ovun, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
+ovun_glm_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
+pr_auc <- as.numeric(ovun_glm_pr_curve$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2244,32 +2134,41 @@ Let's now quickly compare the results of the unbalanced logistic regression with
 
 ```{r}
 # Sort the dataframe based on F1_score and PR_AUC columns
-sorted_df <- df_metrics[order(-df_metrics$F1_score, -df_metrics$PR_AUC), ]
+sorted_df <- df_metrics[order(-df_metrics$PR_AUC, -df_metrics$F1_score), ]
 rounded_df <- sorted_df
 rounded_df[, -1] <- round(rounded_df[, -1], 3)
 kable(rounded_df)
 ```
 
-After evaluating the models, we found that they have comparable F1 scores. However, when considering the PR AUC value, the unbalanced model stands out and performs better than the other models.
+```{r}
+plot(glm_pr_curve, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0.5, 1))
+plot(rose_glm_pr_curve, add = TRUE, color = 3)
+plot(ovun_glm_pr_curve, add = TRUE, color = 4)
+
+legend_text <- c(
+  paste0("LR Unbalanced (AUC = ", round(glm_pr_curve$auc.integral, 3), ")"),
+  paste0("LR ROSE (AUC = ", round(rose_glm_pr_curve$auc.integral, 3), ")"),
+  paste0("LR Ovun (AUC = ", round(ovun_glm_pr_curve$auc.integral, 3), ")")
+)
+
+legend("topright", legend = legend_text, col = c(2, 3, 4), lty = 1, lwd = 2, bty = "n", cex = 0.8)
+```
+
+After evaluating the models, we found that they have comparable F1 scores. However, when considering the PR AUC value, **the unbalanced model stands out and performs better than the other models**.
 
 Comparing the Ovun.sample and ROSE approaches, we see that they exhibit similar performance. However, based on the lower AIC value and higher McFadden's R2, we would prefer the Ovun.sample approach over the ROSE approach.
 
-Additionally, when examining the impact of the selected features, we noticed a slight improvement in the F1 score of the standard Logistic regression model. However, it resulted in a decrease in the PR AUC value. Interestingly, when using the subset of selected features, the performance of the balanced models (ROSE and Ovun) dropped.
-
-Based on these findings, we will proceed with the classification analysis, focusing solely on the logistic regression model with the selected subset of features and excluding the other models from further consideration.
-
-Let's visualize its confusion matrix:
+Let's visualize the confusion matrix of the logistic regression model trained on the unbalanced dataset:
 
 ```{r}
-glm_predictions <- predict(glm_reduced_model, df_test_subset_glm)
+glm_predictions <- predict(glm_model, df_test)
 cm <- confusionMatrix(data=glm_predictions, reference = df_test$Pension_Status)
-fourfoldplot(cm$table, color = c("#CC6666", "#99CC99"),      conf.level = 0, margin = 1, main = "Confusion Matrix")
+fourfoldplot(cm$table, color = c("#CC6666", "#99CC99"), conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
-
+We will now proceed with testing other classification algorithms while retaining the Logistic Regression model trained on an unbalanced dataset for comparison.
 
 ```{r}
-# Filter the dataframe to keep only the row with Model_name "Logistic regression"
-df_metrics <- df_metrics[df_metrics$Model_name == "Logistic regression - Reduced", ]
+df_metrics <- df_metrics[df_metrics$Model_name == "Logistic regression", ]
 
 # Remove the columns "AIC" and "McFaddens_R2"
 df_metrics <- df_metrics[, !(names(df_metrics) %in% c("AIC", "McFaddens_R2"))]
@@ -2302,7 +2201,8 @@ recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
 nb_pred_probs <- predict(nb_model, newdata = df_test, type = "raw")
-pr_auc <- as.numeric(pr.curve(scores.class0 = nb_pred_probs[, "Above"], scores.class1 = nb_pred_probs[, "Below"], curve=T)$auc.integral)
+nb_pr_curve <- pr.curve(scores.class0 = nb_pred_probs[, "Above"], scores.class1 = nb_pred_probs[, "Below"], curve=T)
+pr_auc <- as.numeric(nb_pr_curve$auc.integral)
 
 
 new_row <- data.frame(Model_name = Model_name,
@@ -2317,44 +2217,7 @@ df_metrics <- rbind(df_metrics, new_row)
  
 AIC and McFadden's R2 are metrics that are calculated based on the likelihood of the model. Because Naive Bayes does not have a likelihood function, these metrics cannot be calculated for it. This is because the likelihood function is used to measure how well the model fits the data, and Naive Bayes does not have a way to measure this.
 
-Here, we will assess and compare the performance of Naive Bayes using the selected features from above against the full model.
-
-```{r}
-set.seed(123)
-nb_model_reduced <- naiveBayes(Pension_Status ~ ., data = df_train_subset_glm)
-
-# Confusion Matrix
-nb_reduced_pred <- predict(nb_model_reduced, newdata = df_test_subset_glm)
-fourfoldplot(table(df_test_subset_glm$Pension_Status, nb_reduced_pred), color = c("#CC6666", "#99CC99"),
-             conf.level = 0, margin = 1, main = "Confusion Matrix")
-```
-The confusion matrix shows an improvement compared to the previous results.
-
-Naive Bayes is a probabilistic classifier that assumes that the features are independent of each other. This assumption may not hold true when there are a large number of features, as the features may be correlated with each other. By reducing the number of features, the correlation between the features is reduced, and the assumption that the features are independent is more likely to be valid. In addition, Naive Bayes is a relatively simple model, and it can be sensitive to noise in the data. By reducing the number of features, the noise in the data is reduced. This can lead to improved performance of the model.
-
-```{r, echo=FALSE, message=FALSE}
-Model_name <- "Naive Bayes - Reduced"
-
-cm <- confusionMatrix(data = nb_reduced_pred, reference = df_test_subset_glm$Pension_Status)
-
-accuracy <- as.numeric(cm$overal['Accuracy'])
-precision <- as.numeric(cm$byClass["Precision"])
-recall <- as.numeric(cm$byClass["Recall"])
-f1_score <- as.numeric(cm$byClass["F1"])
-
-nb_pred_probs <- predict(nb_model_reduced, newdata = df_test_subset_glm, type = "raw")
-pr_auc <- as.numeric(pr.curve(scores.class0 = nb_pred_probs[, "Above"], scores.class1 = nb_pred_probs[, "Below"], curve=T)$auc.integral)
-
-new_row <- data.frame(Model_name = Model_name,
-                      Accuracy = accuracy,
-                      Precision = precision,
-                      Recall = recall,
-                      F1_score = f1_score,
-                      PR_AUC = pr_auc)
-
-df_metrics <- rbind(df_metrics, new_row)
-```
-
+We also evaluated the performance of Naive Bayes using training subsets created using the ROSE and Ovun techniques, in comparison to the model trained on the unbalanced dataset. However, no improvement was observed.
 
 ### **Linear Discriminant Analysis**
 
@@ -2367,7 +2230,6 @@ lda_model = train(form = Pension_Status ~ .,
                   method = "lda")
 lda_model
 ```
-
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "Linear Discriminant Analysis"
 
@@ -2382,7 +2244,8 @@ f1_score <- as.numeric(cm$byClass["F1"])
 auc_lda <- as.numeric(roc.curve(df_test$Pension_Status, lda_pred)$auc)
 
 pred_probs <- predict(lda_model, newdata = df_test, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
+lda_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
+pr_auc <- as.numeric(lda_pr_curve$auc.integral)
 
 
 # Add new row to the df_metrics dataframe
@@ -2396,47 +2259,14 @@ new_row <- data.frame(Model_name = "Linear Discriminant Analysis",
 df_metrics <- rbind(df_metrics, new_row)
 ``` 
 
-Here, we will evaluate the performance of LDA using the selected features from above in comparison to the full model.
-
-```{r}
-lda_reduced_model = train(form = Pension_Status ~ .,
-                          data = df_train_subset_glm,
-                          trControl = ctrl,
-                          method = "lda")
-lda_reduced_model
-```
-The full LDA model worked better than the reduced model, which is an interesting observation. However, it is possible that the difference in performance between the two models was not statistically significant. In order to determine this, we would need to conduct a statistical test.  But for the purpose of our analysis, we deemed it unnecessary.
-
-```{r, echo=FALSE, message=FALSE}
-Model_name <- "LDA - Reduced"
-
-lda_reduced_pred <- predict(lda_reduced_model, newdata = df_test_subset_glm)
-cm <- confusionMatrix(data = lda_reduced_pred, reference = df_test_subset_glm$Pension_Status)
-
-accuracy <- as.numeric(cm$overall["Accuracy"])
-precision <- as.numeric(cm$byClass["Precision"])
-recall <- as.numeric(cm$byClass["Recall"])
-f1_score <- as.numeric(cm$byClass["F1"])
-
-pred_probs <- predict(lda_reduced_model, newdata = df_test_subset_glm, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
-
-new_row <- data.frame(Model_name = Model_name,
-                      Accuracy = accuracy,
-                      Precision = precision,
-                      Recall = recall,
-                      F1_score = f1_score,
-                      PR_AUC = pr_auc)
-
-df_metrics <- rbind(df_metrics, new_row)
-```
-
+We also assessed the performance of LDA using the synthetic training dataset. However, similar to previous experiments, the results did not show any improvement. Consequently, we have decided not to retain those results for further analysis.
 
 ### **Quadratic discriminant analysis**
 
 For the sake of completeness, we will also employ quadratic discriminant analysis to train the classification model.
 
 ```{r}
+set.seed(123)
 qda_model = train(form = Pension_Status ~ . - Status,
                   data = df_train,
                   trControl = ctrl,
@@ -2456,7 +2286,8 @@ recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
 pred_probs <- predict(qda_model, newdata = df_test, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
+qda_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
+pr_auc <- as.numeric(qda_pr_curve$auc.integral)
 
 # Add new row to the df_metrics dataframe
 new_row <- data.frame(Model_name = Model_name,
@@ -2489,41 +2320,6 @@ print(chi_test)
 
 ggplot(df_train, aes(x = Status, fill = Pension_Status)) +  geom_bar(alpha = 0.7)
 ```
-As done previously, we will train a model using only a subset of the original features.
-
-```{r}
-qda_reduced_model = train(form = Pension_Status ~ .,
-                    data = df_train_subset_glm,
-                    trControl = ctrl,
-                    method = "qda")
-qda_reduced_model
-```
-We can observe that QDA with a reduced feature subset performed better than the full model. When utilizing QDA, the model assumes that each class follows a quadratic decision boundary. However, this assumption may not hold true when there is a large number of features, as it increases the complexity of the decision boundary.
-
-```{r, echo=FALSE, message=FALSE}
-Model_name <- "QDA - Reduced"
-
-qda_reduced_pred <- predict(qda_reduced_model, newdata = df_test_subset_glm)
-cm <- confusionMatrix(data = qda_reduced_pred, reference = df_test_subset_glm$Pension_Status)
-
-accuracy <- as.numeric(cm$overall["Accuracy"])
-precision <- as.numeric(cm$byClass["Precision"])
-recall <- as.numeric(cm$byClass["Recall"])
-f1_score <- as.numeric(cm$byClass["F1"])
-
-pred_probs <- predict(qda_reduced_model, newdata = df_test_subset_glm, type = "prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)$auc.integral)
-
-
-new_row <- data.frame(Model_name = Model_name,
-                      Accuracy = accuracy,
-                      Precision = precision,
-                      Recall = recall,
-                      F1_score = f1_score,
-                      PR_AUC = pr_auc)
-
-df_metrics <- rbind(df_metrics, new_row)
-```
 
 ### **k-NN**
 
@@ -2538,8 +2334,6 @@ df_test[, numeric_cols] <- scale(df_test[, numeric_cols])
 df_train$Status <- as.numeric(df_train$Status)
 df_test$Status <- as.numeric(df_test$Status)
 ```
-
-
 
 ```{r}
 # Set the seed for reproducibility
@@ -2591,7 +2385,8 @@ recall <- as.numeric(cm_knn$byClass["Recall"])
 f1_score <- as.numeric(cm_knn$byClass["F1"])
 
 knn_pred_probs <- predict(final_model, newdata = df_test[, -ncol(df_test)], type="prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = knn_pred_probs[,"Above"], scores.class1 = knn_pred_probs[,"Below"], curve=T)$auc.integral)
+knn_pr_curve <- pr.curve(scores.class0 = knn_pred_probs[,"Above"], scores.class1 = knn_pred_probs[,"Below"], curve=T)
+pr_auc <- as.numeric(knn_pr_curve$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
@@ -2603,97 +2398,40 @@ new_row <- data.frame(Model_name = Model_name,
 df_metrics <- rbind(df_metrics, new_row)
 ```
 
-Similarly as before, we will attempt to improve the performance of the k-NN classifier by utilizing the selected subset of features.
-
-```{r}
-numeric_cols <- names(df_test_subset_glm)[sapply(df_test_subset_glm, is.numeric)]
-
-df_train_subset_glm[, numeric_cols] <- scale(df_train_subset_glm[, numeric_cols])
-df_test_subset_glm[, numeric_cols] <- scale(df_test_subset_glm[, numeric_cols])
-```
-
-```{r}
-# Set the seed for reproducibility
-set.seed(123)
-
-# Define the cross-validation parameters
-ctrl <- trainControl(method = "cv", number = 5, summaryFunction = prSummary, classProbs = TRUE)
-
-# Perform cross-validation to select the best k
-k_values <- seq(3, sqrt(nrow(df_train_subset_glm)), by = 2)
-f1_scores <- numeric(length(k_values))
-
-for (i in seq_along(k_values)) {
-  k <- k_values[i]
-  
-  # Train the model using cross-validation
-  knn_reduced_model <- train(x <- df_train_subset_glm[, -1],
-                             y = df_train_subset_glm$Pension_Status,
-                             method = "knn",
-                             trControl = ctrl,
-                             tuneGrid = data.frame(k = k),
-                             metric = "F")
-  f1_scores[i] <- knn_reduced_model$results$F[1]
-}
-
-best_k <- k_values[which.max(f1_scores)]
-cat("Best k value:", best_k, "\n")
-
-final_model <- knn_reduced_model$finalModel
-final_knn_pred <- predict(final_model, newdata = df_test_subset_glm[, -1], type="class")
-cm <- confusionMatrix(data=final_knn_pred, reference = df_test_subset_glm$Pension_Status)
-fourfoldplot(cm$table, color = c("#CC6666", "#99CC99"),
-             conf.level = 0, margin = 1, main = "Confusion Matrix")
-```
-The model's performance has slightly improved. In general, a lower number of features can be beneficial for k-NN classification. With a reduced feature set, the curse of dimensionality is mitigated, which can lead to improved performance of the k-NN algorithm. 
-
-```{r, echo=FALSE, message=FALSE}
-Model_name <- "K-Nearest Neighbors - Reduced"
-
-final_knn_pred <- predict(final_model, newdata = df_test_subset_glm[, -1], type="class")
-cm <- confusionMatrix(data = final_knn_pred, reference = df_test_subset_glm$Pension_Status)
-
-accuracy <- as.numeric(cm$overall["Accuracy"])
-precision <- as.numeric(cm$byClass["Precision"])
-recall <- as.numeric(cm$byClass["Recall"])
-f1_score <- as.numeric(cm$byClass["F1"])
-
-knn_pred_probs <- predict(final_model, newdata = df_test_subset_glm[, -1], type="prob")
-pr_auc <- as.numeric(pr.curve(scores.class0 = knn_pred_probs[,"Above"], scores.class1 = knn_pred_probs[,"Below"], curve=T)$auc.integral)
-
-new_row <- data.frame(Model_name = Model_name,
-                      Accuracy = accuracy,
-                      Precision = precision,
-                      Recall = recall,
-                      F1_score = f1_score,
-                      PR_AUC = pr_auc)
-
-df_metrics <- rbind(df_metrics, new_row)
-```
-
-After evaluating the results and comparing the models trained on all features versus the reduced subset of features, it was found that the feature selection process did not significantly improve the performance for most models, except for Logistic Regression. Therefore, for our final analysis, we will exclude the models trained on the reduced feature subset.
+After evaluating the results obtained from training various classifiers, it was observed that the synthetic balancing of the training dataset using two different techniques did not lead to a significant improvement in performance for the tested models. As a result, these models were not included in our final analysis.
 
 ```{r}
 # Sort the dataframe based on F1_score and PR_AUC columns
 sorted_df <- df_metrics[order(-df_metrics$PR_AUC, -df_metrics$F1_score), ]
 rounded_df <- sorted_df
 rounded_df[, -1] <- round(rounded_df[, -1], 3)
-rounded_df <- rounded_df[!rounded_df$Model_name %in% c("Naive Bayes - Reduced", "QDA - Reduced", "K-Nearest Neighbors - Reduced", "LDA - Reduced"), ]
 kable(rounded_df)
+```
+
+```{r, echo=FALSE}
+plot(glm_pr_curve, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0.0, 1))
+plot(nb_pr_curve, add = TRUE, color = 3)
+plot(lda_pr_curve, add = TRUE, color = 4)
+plot(qda_pr_curve, add = TRUE, color = 5)
+plot(knn_pr_curve, add = TRUE, color = 6)
+
+legend_text <- c(
+  paste0("LR (AUC = ", round(glm_pr_curve$auc.integral, 3), ")"),
+  paste0("NB (AUC = ", round(nb_pr_curve$auc.integral, 3), ")"),
+  paste0("LDA (AUC = ", round(lda_pr_curve$auc.integral, 3), ")"),
+  paste0("QDA (AUC = ", round(qda_pr_curve$auc.integral, 3), ")"),
+  paste0("KNN (AUC = ", round(knn_pr_curve$auc.integral, 3), ")")
+)
+
+legend("topright", legend = legend_text, col = c(2, 3, 4), lty = 1, lwd = 2, bty = "n", cex = 0.8)
 ```
 
 In our final analysis, we have chosen to prioritize the PR_AUC and F1 score as most significant metrics, especially for evaluating models with unbalanced datasets. Taking into account the values of these two metrics, we have identified the top-performing models as follows:
 
-1. Logistic Regression - Reduced
+1. Logistic Regression
 2. Linear Discriminant Analysis
 3. K-Nearest Neighbors
 
-To determine the overall winner, it is important to carefully assess the strengths of each model in comparison to the others. The Logistic Regression - Reduced model displays superior performance in terms of both F1 score and PR AUC. This model exhibits good precision, recall, and accuracy, while effectively balancing false positives and false negatives. Additionally, its reduced feature set helps address the curse of dimensionality and improves computational efficiency.
+To determine the overall winner, it is important to carefully assess the strengths of each model in comparison to the others. The Logistic Regression model displays superior performance in terms of both F1 score and PR AUC. This model exhibits good precision, recall, and accuracy, while effectively balancing false positives and false negatives. Moreover, the Logistic Regression model offers the added advantage of being relatively straightforward to interpret, which can be valuable in certain scenarios.
 
-Moreover, the Logistic Regression - Reduced model offers the added advantage of being relatively straightforward to interpret, which can be valuable in certain scenarios.
-
-> In conclusion, considering the emphasis on F1 score and PR AUC, the Logistic Regression - Reduced model emerges as the potential winner due to its robust performance across multiple metrics. It not only achieves high predictive accuracy but also provides interpretability, making it an apt choice for our analysis.
-
-
-
-
+> In conclusion, considering the emphasis on F1 score and PR AUC, the Logistic Regression model emerges as the potential winner due to its robust performance across multiple metrics. It not only achieves high predictive accuracy but also provides interpretability, making it an apt choice for our analysis.
