@@ -17,38 +17,38 @@ rm(list=ls())
 ```
 
 ```{r, results="hide", message = FALSE, echo=FALSE, info=FALSE}
-library(ggplot2)
-library(ggpubr)
-library(GGally)
-library(ggcorrplot)
-library(plotly)
-library(tidyverse)
-library(cowplot)
-library(psych)
-library(lattice)
-library(xtable)
-library(plyr)
-library(dplyr)
-library(gridExtra)
-library(WVPlots)
-library(rcompanion)
-library(knitr)
-library(DescTools)
 library(car)
 library(caret)
-library(leaps)
-library(olsrr)
-library(glmnet)
-library(lmtest)
-library(corrr)
-library(ROSE)
-library(e1071)
 library(class)
-library(MLmetrics)
-library(pROC)
-library(PRROC)
-library(vcd)
+library(corrr)
+library(cowplot)
+library(DescTools)
+library(dplyr)
+library(e1071)
+library(ggcorrplot)
+library(GGally)
+library(ggplot2)
+library(ggpubr)
+library(glmnet)
+library(gridExtra)
 library(kableExtra)
+library(knitr)
+library(lattice)
+library(leaps)
+library(lmtest)
+library(MLmetrics)
+library(olsrr)
+library(plotly)
+library(plyr)
+library(PRROC)
+library(psych)
+library(pROC)
+library(rcompanion)
+library(ROSE)
+library(tidyverse)
+library(vcd)
+library(WVPlots)
+library(xtable)
 library(RColorBrewer)
 library(igraph)
 library(MASS)
@@ -101,7 +101,6 @@ kable(LifeExp) %>%
 In order to perform a successful analysis, it is important to properly understand the variables presented in the data. As we saw above, the dataset contains 22 variables (features). Let's start by answering the following question:\
 - What does each variable mean and what type of variable is it (Nominal/Ordinal/Interval/Ratio)?
 
-
 ```{r, echo=FALSE}
 
 # Define column names and descriptions
@@ -145,9 +144,7 @@ knitr::kable(data_info, align = "l", col.names = c("Column Name", "Type", "Descr
 
 ```
 
-
-Let's check whether the columns of our dataframe correspond to the described types above. To do this, we use the command str() to look at the dataset structure:
-
+Let's check whether the columns of our dataframe correspond to the described types above. To do this, we use the command *str()* to look at the dataset structure:
 
 ```{r}
 str(LifeExp)
@@ -166,7 +163,7 @@ Before we proceed with the missing values analysis, let's perform a couple of qu
 ```{r}
 colnames(LifeExp)[colnames(LifeExp) == "thinness..1.19.years"] <- "thinness.10.19.years"
 
-#Convert a character column to a factor column
+# Convert a character column to a factor column
 LifeExp$Year    <- as.factor(LifeExp$Year)
 LifeExp$Country <- as.factor(LifeExp$Country)
 LifeExp$Status  <- as.factor(LifeExp$Status)
@@ -179,12 +176,9 @@ str(LifeExp)
 Let's have a look at the unique values in our dataset.\
 We do this just to double check that number of unique values corresponds to the dataset's description.
 
-
 ```{r}
-# Apply the length function to unique values in each column using sapply()
 num_unique_values <- sapply(LifeExp, function(x) length(unique(x)))
 
-# Print the number of unique values for each column
 for (i in 1 : ncol(LifeExp)) {
   column_name <- names(LifeExp)[i]
   num_unique <- num_unique_values[i]
@@ -192,15 +186,13 @@ for (i in 1 : ncol(LifeExp)) {
 }
 ```
 
-
 ### **Missing Values**
 
-
 To address missing values, the following steps can be taken:\
-1. Detection of missing values:
+1. **Detection** of missing values:
   - Identify null values in the dataset.
   - Consider if there are any alternative representations of missing values, such as zero values.
-2. Dealing with missing values:
+2. **Dealing** with missing values:
   - Decide whether to fill the null values through imputation or interpolation techniques.
   - Alternatively, consider removing the null values from the dataset if appropriate.
 
@@ -216,7 +208,7 @@ sum(is.nan(as.matrix(LifeExp)))
 colSums(is.na(LifeExp))
 ```
 
-As we can see most of the columns contain missing values (NA), resulting in a total of 2563 missing entries. Before we decide how to deal with them, let's check whether there are some wrong entries, which we call inexplicit nulls. The simplest and fastest way to check for such entries would be to do a quick summary() and look at each variable separately and see if the values make sense based on their descriptions.
+As we can see most of the columns contain missing values (NA), resulting in a total of 2563 missing entries. Before we decide how to deal with them, let's check whether there are some wrong entries, which we call inexplicit nulls. The simplest and fastest way to check for such entries would be to do a quick *summary()* and look at each variable separately and see if the values make sense based on their descriptions.
 
 ```{r}
 summary(LifeExp)
@@ -272,7 +264,6 @@ cat(num_na_before, sum(colSums(is.na(LifeExp))))
 
 As we can see, we increased the number of missing values from 2563 to 5763. There seems to be a significant number of null values in the dataset. For now, it might be helpful to analyze separately just the columns that contain nulls to gain more insights. The following function aims to achieve this. It identifies and presents the columns that have explicit null values, tracks the total count of such columns along with their positions in the dataframe, and provides the count and percentage of nulls for each specified column.
 
-
 ```{r}
 nulls_breakdown <- function(df) {
   df_cols <- colnames(df)
@@ -297,7 +288,7 @@ nulls_breakdown(LifeExp)
 
 #### **Dealing with missing values**
 
-Given that approximately half of the values in the BMI variable are null, we decided that it would be the best to exclude this variable from the analysis.
+> Given that approximately half of the values in the BMI variable are null, we decided that it would be the best to exclude this variable from the analysis.
 
 ```{r}
 LifeExp <- LifeExp[, !(colnames(LifeExp) %in% c('BMI'))]
@@ -305,13 +296,13 @@ LifeExp <- LifeExp[, !(colnames(LifeExp) %in% c('BMI'))]
 
 When dealing with NA values, there are multiple approaches that can be considered:
 
-- Fill with the mean value: Replace the NA values with the mean value of the respective variable.
-- Dropping:
+- **Fill with the mean value**: Replace the NA values with the mean value of the respective variable.
+- **Dropping**:
   - Drop all rows that contain at least one NA value: Remove the rows from the dataset that have any NA values.
   - Drop rows that contain more than 50% NA values: Exclude the rows that have more than 50% NA values, while keeping the remaining rows. The NA values can be filled with the mean value.
-- Interpolation: If the data represents a time series, interpolation techniques can be applied to estimate the missing values based on the existing data points.
+- **Interpolation**: If the data represents a time series, interpolation techniques can be applied to estimate the missing values based on the existing data points.
 
-Since we are dealing with time series data assorted by country, the best approach would be to interpolate the data by country. However, from a careful examination of the dataframe it can be seen that there are columns that have null values for each year for some countries. Therefore, we resort to imputation by year, as the second best possible method. This involves replacing the null values with the mean value of each respective year. Imputation of each year's mean is done in the following code snippet:
+Since we are dealing with time series data assorted by country, the best approach would be to interpolate the data by country. However, from a careful examination of the dataframe it can be seen that there are columns that have null values for each year for some countries. Therefore, we resort to **imputation by year**, as the second best possible method. This involves replacing the null values with the mean value of each respective year. Imputation of each year's mean is done in the following code snippet:
 
 ```{r}
 imputed_data <- list()
@@ -325,37 +316,36 @@ for (year in unique(LifeExp$Year)) {
 }
 
 LifeExp <- bind_rows(imputed_data)
+LifeExp_copy <- LifeExp
 
 nulls_breakdown(LifeExp)
 ```
 
-As we can see the missing values have been successfully handled using the interpolation method. We can now proceed to address the issue of outliers. Outliers can have a significant impact on data analysis and modeling, and it is important to identify and handle them appropriately.
+As we can see **the missing values have been successfully handled** using the interpolation method. We can now proceed to address the issue of outliers. Outliers can have a significant impact on data analysis and modeling, and it is important to identify and handle them appropriately.
 
 ### **Outlier analysis**
 
 Outlier analysis is an essential step in exploring and understanding life expectancy data. It helps ensure data quality, identify anomalies and patterns, improve statistical analysis, inform policy decisions, and enhance data visualization and reporting.
+
 Outliers increase the error variance and reduce the power of statistical tests. They can cause bias and/or influence estimates. They can also impact the basic assumption of regression as well as other statistical models.
 
 Similar to missing values, to address the presence of outliers in the data, several steps can be taken:
 
-1. Outlier detection: Identify the outliers in the dataset using appropriate statistical methods or techniques.
+1. **Outlier detection**: Identify the outliers in the dataset using appropriate statistical methods or techniques.
   - Visualization: Create boxplots and histograms to visually inspect the distribution of the data and identify any potential outliers.
   - Tukey's method: Apply Tukey's method or other outlier detection algorithms to determine the presence of outliers based on statistical thresholds or criteria.
-2. Outlier treatment: Decide on the approach for handling outliers. Options include:
+2. **Outlier treatment**: Decide on the approach for handling outliers. Options include:
   - Dropping outliers: Remove the outlier observations from the dataset.
   - Limiting/Winsorizing outliers: Cap the extreme values at a predetermined threshold.
   - Transforming the data: Apply transformations such as logarithmic, inverse, or square root transformations to reduce the impact of outliers.
 
 Each of these steps aims to identify, assess, and appropriately handle the outliers in the dataset to ensure robust analysis and accurate interpretations.
 
-
 #### **Outlier detection**
-
 
 For each continuous variable in the dataset, a boxplot will be generated, displaying the median, quartiles, and any potential outliers. Additionally, histograms will be created to visualize the frequency distribution of the variable.
 
 By examining these plots, we can visually inspect the data and determine if there are any data points that deviate significantly from the majority of the observations, indicating the presence of potential outliers.
-
 
 ```{r,echo = FALSE, message=FALSE, fig.align = "center"}
 
@@ -543,12 +533,7 @@ grid.arrange(p1, b1, p2, b2, p3, b3, p4, b4, p5, b5, p6, b6,p7, b7, p8, b8)
 grid.arrange(p9, b9,p10, b10, p11, b11, p12, b12, p14, b14,p15, b15, p17, b17, p18, b18)
 ```
 
-Visually inspecting the data, it is evident that there are several outliers present in the variables, including the target variable (life expectancy). To statistically identify outliers, *Tukey's method* can be applied. This method defines outliers as values that lie outside 1.5 times the interquartile range (IQR). By calculating the quartiles and IQR for each variable, the upper and lower bounds can be determined, and any values outside these bounds can be classified as outliers.
-
-
-```{r, echo=FALSE}
-LifeExp_copy <- LifeExp
-```
+Visually inspecting the data, it is evident that there are several outliers present in the variables, including the target variable (Life expectancy). To statistically identify outliers, *Tukey's method* can be applied. This method defines outliers as values that lie outside 1.5 times the interquartile range (IQR). By calculating the quartiles and IQR for each variable, the upper and lower bounds can be determined, and any values outside these bounds can be classified as outliers.
 
 ```{r}
 cont_vars <- colnames(LifeExp)[4:length(colnames(LifeExp))]
@@ -571,28 +556,27 @@ kable(outliers_df, format = "markdown")
 
 There seem to be a considerable number of outliers present in this dataset. Now that they have been identified, a question arises: What course of action should be taken regarding them?
 
-
 #### **Dealing with Outliers**
 
 There are several approaches to handling outliers in a dataset, and the typical options are as follows:
 
-1. Discard Outliers (preferably avoided to retain maximum information):
+1. **Discard outliers** (preferably avoided to retain maximum information):
    - This involves removing the data points that are considered outliers.
   
-2. Apply Boundaries (Winsorization):
+2. **Apply boundaries (Winsorization)**:
    - Set upper and/or lower limits for the values, effectively capping extreme values without removing them entirely.
 
-3. Data Transformation:
+3. **Data transformation**:
    - Utilize mathematical transformations such as logarithmic, inverse, square root, etc.
    - Advantages: Can normalize the data and potentially eliminate outliers.
    - Disadvantages: Cannot be applied to variables containing values of zero or below, as it may lead to undefined results.
 
-
-We attempted to handle outliers using the last approach, which involved applying square root and logarithmic transformations to the LifeExp dataset. However, we found that these methods did not improve the situation. Specifically, when using the log transformation, the number of outliers remained the same and when employing the sqrt transformation, the number of outliers actually increased.
+We attempted to handle outliers using the last approach, which involved applying square root or logarithmic transformations to the LifeExp dataset. However, we found that these methods did not improve the situation. Specifically, when using the log transformation, the number of outliers remained the same and when employing the sqrt transformation, the number of outliers actually increased.
 
 Given that each variable in the dataset exhibits a unique number of outliers and these outliers are distributed on different sides of the data, the most suitable approach would likely involve Winsorizing (limiting) the values for each variable individually until no outliers remain. The provided function bellow enables this process by iterating through each variable and allowing the specification of lower and/or upper limits for Winsorization. By default, the function generates two boxplots side by side for each variable, depicting the original data and the Winsorized data, respectively. Once a satisfactory limit is determined through visual analysis, the Winsorized data is saved in the wins_dict dictionary for convenient future access.
 
 ```{r}
+LifeExp <- LifeExp_copy
 test_wins <- function(col, lower_limit = 0, upper_limit = 0, show_plot = TRUE) {
   LifeExp_original <- LifeExp[[col]]
   q_low <- quantile(LifeExp[[col]], lower_limit)
@@ -628,6 +612,7 @@ test_wins(cont_vars[17], lower_limit = 0.05, show_plot = FALSE)
 test_wins(cont_vars[18], lower_limit = 0.025, upper_limit = 0.005, show_plot = FALSE)
 ```
 
+After successfully Winsorizing our data, let's examine how the process has influenced the distribution of values for the modified variables. To simplify the visualization, we have selected four variables and present their boxplots.
 
 ```{r,echo = FALSE, message=FALSE, fig.align = "center"}
 b1 <- ggplot(LifeExp, aes(x=Life.expectancy)) +
@@ -726,7 +711,6 @@ b12_old <- ggplot(LifeExp_copy, aes(x=Diphtheria)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("Diphtheria")
 
-
 b13 <- ggplot(LifeExp, aes(x=HIV.AIDS)) +
 geom_boxplot(fill=2, alpha=0.2) +
 xlab("HIV / AIDS")
@@ -735,7 +719,6 @@ b13_old <- ggplot(LifeExp_copy, aes(x=HIV.AIDS)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("HIV / AIDS")
 
-
 b14 <- ggplot(LifeExp, aes(x=GDP)) +
 geom_boxplot(fill=2, alpha=0.2) +
 xlab("GDP")
@@ -743,7 +726,6 @@ xlab("GDP")
 b14_old <- ggplot(LifeExp_copy, aes(x=GDP)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("GDP")
-
 
 b15 <- ggplot(LifeExp, aes(x=Population)) +
 geom_boxplot(fill=2, alpha=0.2) +
@@ -761,7 +743,6 @@ b16_old <- ggplot(LifeExp_copy, aes(x=thinness.10.19.years)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("thinness.10.19.years")
 
-
 b17 <- ggplot(LifeExp, aes(x=thinness.5.9.years)) +
 geom_boxplot(fill=2, alpha=0.2) +
 xlab("thinness.5.9.years")
@@ -778,12 +759,9 @@ b18_old <- ggplot(LifeExp_copy, aes(x=Income.composition.of.resources)) +
 geom_boxplot(fill=5, alpha=0.2) +
 xlab("Income per resources")
 
-grid.arrange(b1_old, b1,b3_old, b3, b14_old, b14, b15_old, b15, ncol = 2)
+grid.arrange(b1_old, b1, b3_old, b3, b14_old, b14, b15_old, b15, ncol = 2)
 ```
-
-Let's also compare the before and after distributions of some of our variables.
-We can see that the top two graphs (Life Expectancy and Schooling) along with Alcohol, Hepatitis.B, Total.expenditure, that we decide not to show for simplicity, kept the same distribution even after Winsorization. On the opposite case the bottom two graphs (GDP and Polio) along with infant.deaths,percentage.expenditure,Measles, under.five,deaths, drastically changed after Winsorization. 
-
+Let's also compare the distributions before and after Winsorization for some of our variables. We can observe that the top two graphs Life Expectancy and Schooling (along with Alcohol, Hepatitis.B, and Total.expenditure, which we decided not to show for simplicity), maintained the same distribution even after Winsorization. On the other hand, the bottom two graphs GDP and Polio  (along with infant.deaths, percentage.expenditure, Measles, and under.five.deaths), exhibited slight changes after Winsorization.
 
 ```{r, fig.align = "center"}
 p1 <- ggplot() +
@@ -810,7 +788,6 @@ p4 <- ggplot() +
 grid.arrange(p1, p2, p3, p4, ncol = 2)
 ```
 
-
 ## **Exploratory Data Analysis**
 
 Exploratory Data Analysis (EDA) is a crucial process that involves conducting preliminary investigations on data, utilizing summary statistics and visual representations. Its primary objective is to gain a comprehensive understanding of the data's quality and characteristics before delving into formal statistical modeling.
@@ -825,7 +802,7 @@ EDA serves as a means to extract valuable insights from the data by:
 
 - Assessing Assumptions: EDA allows for the assessment of underlying assumptions required for formal analyses. By examining the distributional properties of variables, assessing normality, or exploring heterogeneity, EDA helps evaluate the plausibility of assumptions necessary for subsequent statistical modeling.
 
-In the following part we will be answering some questions related to our Dataset.
+In the following part we will be answering some questions related to our dataset.
 
 ### **Relevant Questions**
 
@@ -841,8 +818,6 @@ ggplot(LifeExp, aes(x = Status, fill = Status)) +
         axis.text.y = element_text(size = 8),
         axis.title.y = element_text(size = 8))
 ```
-
-
 
 ```{r, fig.align = "center"}
 
@@ -870,26 +845,24 @@ kable(Developed_Y[1:5, ],format = "markdown")
 var.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy)
 ```
 
-
-The observed p-value is less than alpha(0.05 by default). Hence we reject the null hypothesis and accept the alternate statement that the variance of two populations is not equal.
-
+The observed p-value is less than alpha (0.05 by default). Hence we reject the null hypothesis and accept the alternate statement that the variance of two populations is not equal.
 
 ```{r}
 t.test(Developed_Y$Life.expectancy,Developing_X$Life.expectancy, alternative = "greater", var.equal = FALSE)
 ```
 <br>
 
-> The final conclusion is that the null hypothesis is rejected against the alternative hypothesis as the p-value<0.05. Hence we conclude that life expectancy in developed countries is more than that of developing countries with 95% confidence.
+> The final conclusion is that the null hypothesis is rejected against the alternative hypothesis as the p-value < 0.05. Hence we conclude that life expectancy in developed countries is more than that of developing countries with 95% confidence.
 
 <br>
 
 #### **Q2. Is there a statistically significant relationship between the average number of schooling years and life expectancy?**
 
-Education creates awareness about healthy living. For example Vaccine hesitancy during this Covid-19 period, especially among the rural population, has highlighted the importance of education. Also educated choices regarding lifestyle and personal health is also influenced by the education level.
+Education creates awareness about healthy living. For example vaccine hesitancy during the COVID-19 period, especially among the rural population, has highlighted the importance of education. Also educated choices regarding lifestyle and personal health is also influenced by the education level.
 
-We will be using the ANOVA test to test the significance of education on life expectancy. Here we will categorize countries into one of the three categories: ‘Low’ (≤8), ‘Medium’ (>8 and ≤12), ‘High’ (>12) depending upon the country’s average schooling years.
+We will be using the ANOVA test to test the significance of education on life expectancy. Here we will categorize countries into one of the three categories: ‘Low’ (≤8), ‘Medium’ (>8 and ≤12) and ‘High’ (>12) depending upon the country’s average schooling years.
 
-Firstly, we will group the data by country and find the average life expectancy and Schooling for each country over the 16 years.
+Firstly, we will group the data by country and find the average life expectancy and schooling for each country over the 16 years.
 
 ```{r}
 Schooling_X <- aggregate(cbind(Life.expectancy, Schooling) ~ Country, data = LifeExp, FUN = mean)
@@ -915,9 +888,7 @@ Schooling_Y <- data.frame(rbind(y1,y2,y3))
 kable(Schooling_Y[1:5, ],format = "markdown")
 ```
 
-
 Let's apply the ANOVA test.
-
 
 ```{r}
 Anova_Results <- aov(Life.expectancy ~ Education, data = Schooling_Y)
@@ -925,7 +896,7 @@ summary(Anova_Results)
 ```
 <br>
 
-> From the ANOVA summary, we can see that the p-value (Pr(>F)) is slightly above the commonly used threshold of 0.05 (significance level). Therefore, there is weak evidence to suggest that the "Education" factor has a statistically significant effect on the response variable. However, since the p-value is close to 0.05, it is on the borderline of significance.
+> From the ANOVA summary, we can see that the p-value is slightly above the commonly used threshold of 0.05. Therefore, there is weak evidence to suggest that the "Education" factor has a statistically significant effect on the response variable. However, since the p-value is close to 0.05, it is on the borderline of significance.
 
 <br>
 
@@ -940,10 +911,8 @@ A higher value of the Income composition of resources index indicates a more equ
 
 Conversely, a lower value of the index indicates a more unequal income distribution, with a smaller proportion of the population having access to resources and opportunities for development. This suggests that income is concentrated in the hands of a smaller segment of the population.
 
-
 ```{r, fig.align = "center"}
 life_expectancy_vs_incomecomp <- ggplot(LifeExp, aes(Income.composition.of.resources, Life.expectancy)) + geom_jitter(color = 2, alpha = 0.3)
-
 life_expectancy_vs_incomecomp
 ```
 
@@ -951,8 +920,7 @@ By this scatter plot we can see that The Income composition of resources and the
 
 ```{r}
 in_comp_res <-aggregate(cbind(Life.expectancy, Income.composition.of.resources) ~ Country, data = LifeExp, FUN = mean)
-
-kable(in_comp_res[1:5, ],format = "markdown")
+kable(in_comp_res[1:5, ], format = "markdown")
 ```
 
 ```{r, fig.align = "center"}
@@ -964,10 +932,9 @@ cor.test(in_comp_res$Income.composition.of.resources,in_comp_res$Life.expectancy
 ```
 <br>
 
-> A correlation coefficient of 0.8376092 indicates a strong positive linear relationship between the variables being correlated, therefore the countries with higher income composition of resources for human development have better life expectancy. Also the regression line explains 84% of variance in the data.Thus countries should spend more on the human development to achieve higher life expectancy.
+> A correlation coefficient of 0.8376092 indicates a strong positive linear relationship between the variables being correlated, therefore the countries with higher income composition of resources for human development have better life expectancy. Also the regression line explains 84% of variance in the data. Thus countries should spend more on the human development to achieve higher life expectancy.
 
 <br>
-
 
 #### **Q4. Italian Government has claimed that they have spent an average of around 8.41% of their total expenditure on health for the year 2000–2015. Can we test their claim?**
 
@@ -983,7 +950,6 @@ t.test(Italy_Y, mu = 8.41, alternative = "two.sided")
 ```
 
 We decided to also test India's claim that they have spent an average of around 5.2% of their total expenditure on health for the year 2000–2015.
-
 
 ```{r}
 India_X <- LifeExp %>% filter (Country == "India")
@@ -1003,13 +969,11 @@ We will conduct a two-proportions z-test to compare the two independent proporti
 
 ```{r}
 Mort_X <- aggregate(cbind(Life.expectancy, infant.deaths, under.five.deaths) ~ Country, data = LifeExp, FUN = mean)
-
 kable(Mort_X[1:5, ],format = "markdown")
 ```
 
 
 infant.deaths column represents the number of infant deaths per 1000 population and similarly, under.five.deaths represents the number of under-five deaths per 1000 population. We have to use the average value of infant or under five deaths of all the countries and take its ceiling value.
-
 
 ```{r}
 mortx <- ceiling(mean(Mort_X$infant.deaths))
@@ -1025,14 +989,12 @@ prop.test(argx,argy, correct = FALSE)
 
 <br>
 
-
-#### **Q6. What is the correlation of Life expectancy with Alcohol drinking habits ?**
+#### **Q6. What is the correlation of Life expectancy with Alcohol drinking habits?**
 
 Let's use the Person correlation test.
 
 ```{r}
 Alc_X <- aggregate(cbind(Life.expectancy, Alcohol) ~ Country, data = LifeExp, FUN = mean) 
-
 kable(Alc_X[1:5, ],format = "markdown")
 ```
 
@@ -1047,12 +1009,12 @@ cor.test(Alc_X$Alcohol, Alc_X$Life.expectancy)
 <br>
 
 >The results indicate a statistically significant moderate positive linear relationship (correlation coefficient = 0.43) between alcohol consumption and life expectancy. This suggests that higher levels of alcohol consumption are associated with increased life expectancy, within the range of data analyzed.
-<b>However,before jumping to conclusions we need to also take in consideration other factors.</b>
+
+**However, before jumping to conclusions we need to also take in consideration other factors.**
 
 Developed countries tend to have higher levels of alcohol consumption compared to developing countries. This can be attributed to various factors such as higher income levels, greater access to alcohol, more established alcohol industries, and different cultural norms surrounding alcohol. This was also our conclusion from our previous analysis where we concluded that life expectancy in developed countries is more than that of developing countries.
 
 Higher GDP at Developed countries can influence alcohol consumption patterns to some extent. As countries experience economic growth and an increase in GDP, there is often an associated rise in income levels and discretionary spending power. This can lead to increased alcohol consumption. 
-
 
 We can visualize these correlations on the following graphs.
 
@@ -1075,7 +1037,6 @@ life_expectancy_vs_GDP  <- ggplot(LifeExp, aes(GDP, Life.expectancy)) + geom_jit
 life_expectancy_vs_GDP 
 ```
 
-
 #### **Q7. Correlation between Life Expectancy and Immunization.**
 
 In COVID-19 times we all have seen the importance of immunization against the virus to increase life expectancy. Can we show that immunization against Polio and Diphtheria has a significant effect on life expectancy?
@@ -1084,7 +1045,6 @@ We will use a two-way ANOVA test. Here we will divide the countries into two cat
 
 ```{r}
 Immun_X <- aggregate(cbind(Life.expectancy, Polio, Diphtheria) ~ Country, data = LifeExp, FUN = mean)
-
 kable(Immun_X[1:5, ],format = "markdown")
 ```
 
@@ -1129,7 +1089,6 @@ summary(Anova_Results_1)
 
 <br>
 
-
 ```{r, fig.align = "center"}
 life_expectancy_vs_Diphtheria  <- ggplot(LifeExp, aes(Diphtheria, Life.expectancy)) + geom_jitter(color = 5, alpha = 0.3)
                               
@@ -1140,32 +1099,29 @@ title <- ggdraw() + draw_label("Correlation between Immunizations and life expec
 plot_grid(title,p, ncol=1)
 ```
 
-
 ### **Constructing Correlation Matrix**
 
-```{r}
+```{r, fig.align = "center"}
 # Compute the correlation matrix
 numeric_vars <- LifeExp[, sapply(LifeExp, is.numeric)]
 cor_matrix <- cor(numeric_vars)
 
-# Plot the correlation matrix using corrplot
+# Plot the correlation matrix
 color_palette = brewer.pal(11, "PuOr")
 corrplot::corrplot(cor_matrix, method = "shade", type = "upper", tl.cex = 0.7, col = color_palette, tl.col = "black" )
 ```
 
-
 #### **Network plot**
 
-```{r}
+```{r, fig.align = "center"}
 cor_matrix %>% corrr::network_plot(min_cor = .3)
 ```
 
 Because there are a lot of variables included in the network plot visualization it is not intuitive for making some conclusions, therefore we decided to also make a star graph with the target variable Life.expectancy that will also be useful later for Linear Regression.
 
-
 #### **Star Graph**
 
-```{r}
+```{r, fig.align = "center"}
 # Subset the relevant variables for the star graph
 numeric_vars_1 <- numeric_vars[, c("Life.expectancy", "infant.deaths", "Alcohol",
                             "percentage.expenditure", "Hepatitis.B", "Measles",
@@ -1174,29 +1130,16 @@ numeric_vars_1 <- numeric_vars[, c("Life.expectancy", "infant.deaths", "Alcohol"
                             "thinness.10.19.years", "thinness.5.9.years",
                             "Income.composition.of.resources", "Schooling")]
 
-# Calculate the correlation matrix
 cor_matrix_1 <- cor(numeric_vars_1, use = "pairwise.complete.obs")
-
-# Extract the correlation values for "Life.Expectancy"
 cor_values <- cor_matrix_1[1, -1]
 
-# Create a star graph
 graph <- graph.star(n = length(cor_values) + 1, mode = "undirected")
-
-# Set the vertex attributes
 V(graph)$name <- colnames(numeric_vars_1)
 V(graph)$size <- c(5, 10 + 40 * abs(cor_values))
-
-# Set the edge attributes (thickness based on correlation strength)
 E(graph)$width <- abs(cor_values) * 5
-
-# Set the layout for visualization
 layout <- layout.star(graph)
+plot_size <- c(15, 15)
 
-# Set the size of the plot
-plot_size <- c(15, 15)  # Adjust the dimensions as needed
-
-# Plot the star graph with increased size
 plot(graph, layout = layout, edge.arrow.size = 0.5, vertex.size = V(graph)$size,
      vertex.label.color = "black", vertex.label.font = 2, edge.width = E(graph)$width,
      xlim = c(-1, 1), ylim = c(-1, 1), asp = 1, frame.plot = FALSE, main = "Correlation Graph",
@@ -1206,8 +1149,6 @@ plot(graph, layout = layout, edge.arrow.size = 0.5, vertex.size = V(graph)$size,
      bg = "white", pch = 21, lty = 1, col = "black", bg = "white", rescale = FALSE,
      width = plot_size[1], height = plot_size[2])
 ```
-
-
 
 ## **Linear Regression**
 
@@ -1249,7 +1190,6 @@ df_metrics_regression <- data.frame(Model_name = character(),
 colnames(df_metrics_regression) <- c("Model_name", "Adj_R2", "AIC", "BIC", "n_coef", "MSE", "RMSE", "n_RMSE_sd", "n_RMSE_range")
 ```
 
-
 ### **Simple linear regression**
 
 The linear regression equation is given by: $$ Y = \beta_0 + \beta_1 \cdot x + \varepsilon $$,\
@@ -1283,7 +1223,7 @@ The formula for the regression line can be expressed as follows:\
 Life.Expectancy = 42.9837 + 41.6751 * Income.composition.of.resources\
 and it is visualized bellow.
 
-```{r}
+```{r, fig.align = "center"}
 ggplot(train, aes(x = Income.composition.of.resources, y = Life.expectancy)) +
   geom_jitter(color = 5, size = 2, alpha = 0.4) +
   labs(x = "Income composition of resources", y = "Life expectancy") +
@@ -1309,7 +1249,7 @@ Let’s now have a look at the **diagnostic plots**, in order to check whether L
 
 It is important to assess these assumptions before relying on the results of a linear regression model to ensure the validity of the model and the reliability of the inferences drawn from it.
 
-```{r}
+```{r, fig.align = "center"}
 par(mfrow = c(2, 2))
 plot(simple_lm)
 ```
@@ -1409,7 +1349,7 @@ As we can see after removing columns with high VIF, the R-squared value decrease
 
 Let’s now have a look at the diagnostic plots.
 
-```{r}
+```{r, fig.align = "center"}
 par(mfrow=c(2,2))
 plot(full_lm_low_vif)
 ```
@@ -1425,7 +1365,6 @@ This plot has also improved. The red line deviates only slightly from the horizo
 
 **Residuals vs Leverage**\
 In this plot we see no evidence of outliers. The “Cook’s distance” dashed curves don’t even appear on the plot. None of the points come close to having both high residual and leverage.
-
 
 ### **Linear model (forward / backward model selection)**
 
@@ -1479,7 +1418,7 @@ plot_subsets_summary <- function(featureSelection_lm){
 
 Both feature selection techniques yielded the same results. So, for simplicity, we will show the results only for the backward selection method.
 
-```{r}
+```{r, fig.align = "center"}
 #plot_subsets_summary(forward_sel_lm)
 plot_subsets_summary(backward_sel_lm)
 ```
@@ -1493,18 +1432,13 @@ vars_adjr2 <- names(coefficients(backward_sel_lm, which.max(backward_sel_lm_summ
 vars_cp <- names(coefficients(backward_sel_lm, which.min(backward_sel_lm_summary$cp)))
 vars_bic <- names(coefficients(backward_sel_lm, which.min(backward_sel_lm_summary$bic)))
 
-# Get the variables in the full model
 vars_full_model <- names(coef(full_lm_low_vif))
-
-# Create a data frame to store the included variables
 selected_vars_df <- data.frame(Feature = vars_full_model, AdjR2 = 0, Cp = 0, BIC = 0)
-
-# Update the data frame with the variables included in each model
 selected_vars_df$AdjR2 <- as.numeric(selected_vars_df$Feature %in% vars_adjr2)
 selected_vars_df$Cp <- as.numeric(selected_vars_df$Feature %in% vars_cp)
 selected_vars_df$BIC <- as.numeric(selected_vars_df$Feature %in% vars_bic)
 
-# Remove the intercept from the data frame
+# Remove the intercept
 selected_vars_df <- selected_vars_df[-1, ]
 
 kable(selected_vars_df, row.names = FALSE)
@@ -1522,7 +1456,7 @@ By excluding these variables, the final model becomes more concise and interpret
 
 To represent the most significant variables, here we report the variable elimination plots:
 
-```{r}
+```{r, fig.align = "center"}
 plot(backward_sel_lm, scale = 'r2')
 plot(backward_sel_lm, scale = 'bic')
 plot(backward_sel_lm, scale = 'Cp')
@@ -1555,7 +1489,7 @@ df_metrics_regression <- rbind(df_metrics_regression, new_row)
 
 The variance explained by the model is 83.45%, which is nearly identical to the previous result (83.43%) achieved with the full model that included all variables except those displaying multicollinearity issues.
 
-```{r}
+```{r, fig.align = "center"}
 ggplot(data = featureSel_lm, aes(x = featureSel_lm$residuals)) +
   geom_histogram(fill = 2, color = "white", alpha = 0.5, bins = 30) +
   labs(x = "Residuals", y = "Count", title = "Histogram of Residuals")
@@ -1563,7 +1497,7 @@ ggplot(data = featureSel_lm, aes(x = featureSel_lm$residuals)) +
 
 The histogram of the residuals exhibits a pattern that closely resembles a normal distribution. However, let's also check the QQ plot.
 
-```{r}
+```{r, fig.align = "center"}
 plot(featureSel_lm, which = 2)
 ```
 
@@ -1605,7 +1539,7 @@ log_featureSel_lm <- lm(Life.expectancy ~ ., data = train_log)
 summary(log_featureSel_lm)
 ```
 
-```{r}
+```{r, fig.align = "center"}
 ggplot(data = log_featureSel_lm, aes(x = log_featureSel_lm$residuals)) +
   geom_histogram(fill = 5, color = "white", alpha = 0.55, bins = 30) +
   labs(x = "Residuals", y = "Count", title = "Histogram of Residuals")
@@ -1635,7 +1569,7 @@ Among the tested models, the multiple linear regression model has the highest ad
 Considering this multicollinearity issue, we can turn our attention to the model obtained using backward feature selection. This model exhibits a slightly lower adjusted R-squared value but offers a favorable trade-off between goodness of fit and complexity. Moreover, the model displays low values of AIC and BIC, suggesting that it strikes a good balance between performance and simplicity.
 
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, fig.align = "center"}
 # Bar graph for Adj_R2
 ggplot(df_metrics_regression, aes(x = Model_name, y = Adj_R2, fill = Model_name)) +
   geom_bar(stat = "identity") +
@@ -1683,34 +1617,16 @@ ggplot(df_metrics_regression, aes(x = Model_name, y = MSE, fill = Model_name)) +
 
 ```
 
-
 ```{r, echo=FALSE}
 # Sort the dataframe based on F1_score in descending order
 df_metrics_regression <- df_metrics_regression[order(df_metrics_regression$Adj_R2, decreasing = TRUE), ]
-
 df_metrics_regression <- df_metrics_regression[df_metrics_regression$Model_name == "MLR - Feature selection", ]
-
 df_metrics_regression <- df_metrics_regression[, !(names(df_metrics_regression) %in% c("AIC", "BIC", "n_coef"))]
 ```
-
 
 ### **Ridge regression**
 
 For the Ridge regression, it is necessary to standardize data.
-
-```{r}
-numeric_cols <- names(df_test)[sapply(df_test, is.numeric)]
-
-mean_test <- mean(test$Life.expectancy)
-std_test <- sd(test$Life.expectancy)
-
-train_scaled <- train
-test_scaled <- test
-
-train_scaled[, numeric_cols] <- scale(train[, numeric_cols])
-test_scaled[, numeric_cols] <- scale(test[, numeric_cols])
-```
-
 
 ```{r}
 prepare_ridge_lasso <- function(X, Y, alpha){
@@ -1735,14 +1651,14 @@ prepare_ridge_lasso <- function(X, Y, alpha){
 }
 ```
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, fig.align = "center"}
 train$Status  <- as.numeric(train$Status) - 1
 X = as.matrix(train[, X_colnames_reduced_featureSel])
 Y = as.matrix(train[, Y_colname])
 
 ridge_res = prepare_ridge_lasso(X = X,
                                 Y = Y,
-                                alpha = 0  # Ridge
+                                alpha = 0 # Ridge
                                 )
 ```
 
@@ -1788,7 +1704,7 @@ coef(best_model)
 
 ### **Lasso regression**
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, fig.align = "center"}
 lasso_res = prepare_ridge_lasso(X = X,
                                 Y = Y,
                                 alpha = 1  # Lasso
@@ -1800,8 +1716,7 @@ lasso_model <- lasso_res$model
 lasso_lambda <- lasso_res$lambda
 lasso_pred <- predict(lasso_model,
                       s = lasso_lambda,
-                      newx = as.matrix(test[, X_colnames_reduced_featureSel])
-                      )
+                      newx = as.matrix(test[, X_colnames_reduced_featureSel]))
 lasso_mse <- mean((lasso_pred - test$Life.expectancy)^2)
 lasso_mse
 ```
@@ -1836,7 +1751,7 @@ df_metrics_regression <- rbind(df_metrics_regression, new_row)
 kable(df_metrics_regression[order(df_metrics_regression$MSE)])
 ```
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, fig.align = "center"}
 ggplot(df_metrics_regression, aes(x = reorder(Model_name, MSE), y = MSE, fill = Model_name)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = round(MSE, 3)), vjust = 2.5) +
@@ -1896,7 +1811,6 @@ Also, the model provides insights into the relationships between the predictors 
 
 In summary, these findings were logical to us, and they highlight the impact of various factors on Life Expectancy. Factors such as adult mortality, vaccination coverage, disease prevalence, socioeconomic indicators, and lifestyle choices, like alcohol consumption, play a significant role in shaping Life Expectancy outcomes.
 
-
 ## **Classification**
 
 In this section, we will address a **binary classification** problem. Our objective will be to determine whether a country's life expectancy is **below or above the (Italian) pension threshold of 67 years**. To approach this, we will generate a binary variable by using a threshold on the Life expectancy column. This parameter can be of great value to businesses, banks, and other industries seeking insights related to retirement planning.
@@ -1908,7 +1822,6 @@ standard_pension_age <- 67
 LifeExp <- LifeExp %>% mutate(Pension_Status = ifelse(Life.expectancy < standard_pension_age, "Below", "Above"))
 LifeExp[,"Pension_Status"] <- as.factor(LifeExp[,"Pension_Status"])
 LifeExp <- LifeExp[, !(names(LifeExp) %in% "Life.expectancy")]
-
 prop.table(table(LifeExp$Pension_Status))
 ```
 Upon applying the threshold of 67 to the Life expectancy column, we observe that the resulting categories, "Above" and "Below," contain approximately 66% and 34% of the data, respectively. This indicates a noticeable level of class imbalance. Consequently, we will assess the potential impact of this imbalance on the performance of our classifiers. Nonetheless, we will be vigilant and employ suitable metrics specifically designed for evaluating models trained on unbalanced data.
@@ -1944,7 +1857,6 @@ df_metrics <- data.frame(Model_name = character(),
                          F1_score = numeric(),
                          PR_AUC = numeric())
 colnames(df_metrics) <- c("Model_name", "AIC", "McFaddens_R2", "Accuracy", "Precision", "Recall", "F1_score", "PR_AUC")
-
 ```
 
 ### **Logistic regression**
@@ -2001,11 +1913,8 @@ Observation:  This approach does not introduce bias, as the significance level w
 # Select the most significant features based on the coefficient significance levels
 significant_features <- c("Adult.Mortality", "percentage.expenditure", "Measles", "Polio", "Total.expenditure", "Diphtheria", "HIV.AIDS", "thinness.5.9.years", "Income.composition.of.resources", "Schooling")
 
-# Subset the training and test data using the significant features
 df_train_subset_glm <- df_train[, c("Pension_Status", significant_features)]
 df_test_subset_glm <- df_test[, c("Pension_Status", significant_features)]
-
-# Train the logistic regression model using the significant features
 
 glm_reduced_model <- train(form = Pension_Status ~ .,
                            data = df_train_subset_glm,
@@ -2085,7 +1994,7 @@ Next, we will compare the performance of the "ovun.sample" package with the prev
 
 ```{r}
 balanced_data_ovun <- ovun.sample(Pension_Status ~ ., data = df_train, method = "both", p=0.5, N = nrow(df_train), seed = 123)$data
-# Can play with parameter p: probability of positive class in newly generated sample
+# Can adjust the parameter p: probability of positive class in newly generated sample
 table(balanced_data_ovun$Pension_Status)
 ```
 We have achieved an almost ideal distribution of 0.506:0.494.
@@ -2140,7 +2049,7 @@ rounded_df[, -1] <- round(rounded_df[, -1], 3)
 kable(rounded_df)
 ```
 
-```{r}
+```{r, fig.align = "center"}
 plot(glm_pr_curve, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0.5, 1))
 plot(rose_glm_pr_curve, add = TRUE, color = 3)
 plot(ovun_glm_pr_curve, add = TRUE, color = 4)
@@ -2160,7 +2069,7 @@ Comparing the Ovun.sample and ROSE approaches, we see that they exhibit similar 
 
 Let's visualize the confusion matrix of the logistic regression model trained on the unbalanced dataset:
 
-```{r}
+```{r, fig.align = "center"}
 glm_predictions <- predict(glm_model, df_test)
 cm <- confusionMatrix(data=glm_predictions, reference = df_test$Pension_Status)
 fourfoldplot(cm$table, color = c("#CC6666", "#99CC99"), conf.level = 0, margin = 1, main = "Confusion Matrix")
@@ -2178,7 +2087,7 @@ df_metrics <- df_metrics[, !(names(df_metrics) %in% c("AIC", "McFaddens_R2"))]
 
 Next, we will compare our Logistic regression model with a Naive Bayes classifier. We will use the unbalanced data for the Naive Bayes classifier since it has shown good performance with Logistic regression.
 
-```{r}
+```{r, fig.align = "center"}
 set.seed(123)
 nb_model <- naiveBayes(Pension_Status ~ ., data = df_train)
 
@@ -2203,7 +2112,6 @@ f1_score <- as.numeric(cm$byClass["F1"])
 nb_pred_probs <- predict(nb_model, newdata = df_test, type = "raw")
 nb_pr_curve <- pr.curve(scores.class0 = nb_pred_probs[, "Above"], scores.class1 = nb_pred_probs[, "Below"], curve=T)
 pr_auc <- as.numeric(nb_pr_curve$auc.integral)
-
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
@@ -2247,8 +2155,6 @@ pred_probs <- predict(lda_model, newdata = df_test, type = "prob")
 lda_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
 pr_auc <- as.numeric(lda_pr_curve$auc.integral)
 
-
-# Add new row to the df_metrics dataframe
 new_row <- data.frame(Model_name = "Linear Discriminant Analysis",
                       Accuracy = accuracy,
                       Precision = precision,
@@ -2308,16 +2214,10 @@ In predict.lm(model, df) :
 Possible problem: Two predictor variables are perfectly correlated.
 Let's analyze this issue.
 
-```{r}
-# Create a contingency table of the two variables
+```{r, fig.align = "center"}
 cont_table <- table(df_train$Status, df_train$Pension_Status)
-
-# Perform the chi-squared test of independence
 chi_test <- chisq.test(cont_table)
-
-# Print the test result
 print(chi_test)
-
 ggplot(df_train, aes(x = Status, fill = Pension_Status)) +  geom_bar(alpha = 0.7)
 ```
 
@@ -2408,7 +2308,7 @@ rounded_df[, -1] <- round(rounded_df[, -1], 3)
 kable(rounded_df)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align = "center"}
 plot(glm_pr_curve, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0.0, 1))
 plot(nb_pr_curve, add = TRUE, color = 3)
 plot(lda_pr_curve, add = TRUE, color = 4)
