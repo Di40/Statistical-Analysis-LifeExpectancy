@@ -21,6 +21,7 @@ library(car)
 library(caret)
 library(class)
 library(corrr)
+library(countrycode)
 library(cowplot)
 library(DescTools)
 library(dplyr)
@@ -36,6 +37,7 @@ library(knitr)
 library(lattice)
 library(leaps)
 library(lmtest)
+library(maps)
 library(MLmetrics)
 library(olsrr)
 library(plotly)
@@ -81,8 +83,8 @@ We start our project by loading the dataset from the local drive to a dataframe.
 
 ```{r, echo=FALSE}
 tryCatch({
-  #LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
-  LifeExp <- read.csv("C:/Users/marij/Desktop/Statistical-Analysis-LifeExpectancy/LifeExpectancyData.csv")
+  LifeExp <- read.csv("C:/Users/Dejan/Desktop/StatProject_LifeExpectancy/LifeExpectancyData.csv")
+  # LifeExp <- read.csv("C:/Users/marij/Desktop/Statistical-Analysis-LifeExpectancy/LifeExpectancyData.csv")
   print("Dataset loaded.")
 }, error = function(e) {
   print(paste("An error occurred while loading the dataset:", conditionMessage(e)))
@@ -1781,6 +1783,7 @@ Based on the analysis, we can conclude that the model obtained using backward fe
 Let's rerun its summary and interpret the results.
 
 ```{r}
+featureSel_lm <- lm(train[,Y_colname] ~ ., data = train[, X_colnames_reduced_featureSel])
 summary(featureSel_lm)
 ```
 
@@ -1817,6 +1820,74 @@ Also, the model provides insights into the relationships between the predictors 
 - Schooling: An increase in schooling years is associated with an increase in Life Expectancy on average.
 
 In summary, these findings were logical to us, and they highlight the impact of various factors on Life Expectancy. Factors such as adult mortality, vaccination coverage, disease prevalence, socioeconomic indicators, and lifestyle choices, like alcohol consumption, play a significant role in shaping Life Expectancy outcomes.
+
+Before we continue with classification, let's visualize the predictions of the model using a world map. For this purpose, we used the *maps* library. Unfortunately, there were a couple of countries whose names mismatched between the values in our dataset and the country names in the maps library. For the larger countries, we made the necessary modifications so that they would match. For some smaller countries, we decided to skip them, as this is just for demonstration purposes, and we were satisfied with the obtained visualization.
+
+```{r, info=FALSE, message=FALSE, fig.align='center', error=FALSE}
+WorldData <- map_data("world")
+
+test_pred <- df_test
+test_pred$pred <- predict(featureSel_lm, newdata = test)
+test_pred_2015 <- test_pred[test_pred$Year == '2015',]
+test_pred_2015 <- test_pred_2015[c("Country", "pred")]
+
+# Modify certain values so they will match
+test_pred_2015$Country <- as.character(test_pred_2015$Country)
+test_pred_2015[test_pred_2015$Country == "United States of America", "Country"] <- "USA"
+test_pred_2015[test_pred_2015$Country == "Russian Federation", "Country"] <- "Russia"
+test_pred_2015[test_pred_2015$Country == "Bolivia (Plurinational State of)", "Country"] <- "Bolivia"
+test_pred_2015[test_pred_2015$Country == "Iran (Islamic Republic of)", "Country"] <- "Iran"
+test_pred_2015[test_pred_2015$Country == "United Kingdom of Great Britain and Northern Ireland", "Country"] <- "UK"
+test_pred_2015[test_pred_2015$Country == "Democratic People's Republic of Korea", "Country"] <- "South Korea"
+
+ggplot() +
+  geom_map(data = WorldData, map = WorldData,
+           aes(x = long, y = lat, group = group, map_id=region),
+           fill = "white", colour = "#7f7f7f", size=0.5) + 
+  geom_map(data = test_pred_2015, map=WorldData,
+           aes(fill=pred, map_id=Country),
+           colour="#7f7f7f", size=0.5) +
+  coord_map("rectangular", lat0=0, xlim=c(-180,180), ylim=c(-60, 90)) +
+  scale_fill_continuous(low=0, high=2, guide="colorbar") +
+  scale_y_continuous(breaks=c()) +
+  scale_x_continuous(breaks=c()) +
+  labs(fill="Life expectancy", title="Life expectancy predictions", x="", y="") +
+  theme_bw()
+```
+
+```{r, info=FALSE, message=FALSE, fig.align='center', error=FALSE}
+WorldData <- map_data("world")
+
+test_pred <- df_test
+test_pred_2015 <- test_pred[test_pred$Year == '2015',]
+test_pred_2015 <- test_pred_2015[c("Country", "Life.expectancy")]
+
+# Modify certain values so they will match
+test_pred_2015$Country <- as.character(test_pred_2015$Country)
+test_pred_2015[test_pred_2015$Country == "United States of America", "Country"] <- "USA"
+test_pred_2015[test_pred_2015$Country == "Russian Federation", "Country"] <- "Russia"
+test_pred_2015[test_pred_2015$Country == "Bolivia (Plurinational State of)", "Country"] <- "Bolivia"
+test_pred_2015[test_pred_2015$Country == "Iran (Islamic Republic of)", "Country"] <- "Iran"
+test_pred_2015[test_pred_2015$Country == "United Kingdom of Great Britain and Northern Ireland", "Country"] <- "UK"
+test_pred_2015[test_pred_2015$Country == "Democratic People's Republic of Korea", "Country"] <- "South Korea"
+
+ggplot() +
+  geom_map(data = WorldData, map = WorldData,
+           aes(x = long, y = lat, group = group, map_id=region),
+           fill = "white", colour = "#7f7f7f", size=0.5) + 
+  geom_map(data = test_pred_2015, map=WorldData,
+           aes(fill=Life.expectancy, map_id=Country),
+           colour="#7f7f7f", size=0.5) +
+  coord_map("rectangular", lat0=0, xlim=c(-180,180), ylim=c(-60, 90)) +
+  scale_fill_continuous(low=0, high=2, guide="colorbar") +
+  scale_y_continuous(breaks=c()) +
+  scale_x_continuous(breaks=c()) +
+  labs(fill="Life expectancy", title="Life expectancy true values", x="", y="") +
+  theme_bw()
+```
+
+> For most countries, we can see a good match between the model predictions and the true values. However, the model sometimes overestimates life expectancy. The lowest life expectancy is observed in Africa, except for its northern countries. Europe generally has high life expectancy, along with Australia and North America. Argentina has the highest life expectancy among South American countries. Asia does not have high life expectancy in general, with certain exceptions, such as Japan, which is one of the top countries in terms of life expectancy.
+
 
 ## **Classification**
 
