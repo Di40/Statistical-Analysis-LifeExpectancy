@@ -1498,19 +1498,21 @@ df_metrics_regression <- rbind(df_metrics_regression, new_row)
 
 The variance explained by the model is 83.45%, which is nearly identical to the previous result (83.43%) achieved with the full model that included all variables except those displaying multicollinearity issues.
 
+Let’s now have a look at the diagnostic plots of the new model.
+
+```{r, fig.align = "center"}
+par(mfrow=c(2,2))
+plot(featureSel_lm)
+```
+We can observe that the distribution has "fat" tails - both the ends of the Q-Q plot deviate from the straight line and its center follows a straight line. We refer to this as positive kurtosis (a measure of “tailedness”).
+
 ```{r, fig.align = "center"}
 ggplot(data = featureSel_lm, aes(x = featureSel_lm$residuals)) +
   geom_histogram(fill = 2, color = "white", alpha = 0.5, bins = 30) +
   labs(x = "Residuals", y = "Count", title = "Histogram of Residuals")
 ```
 
-The histogram of the residuals exhibits a pattern that closely resembles a normal distribution. However, let's also check the QQ plot.
-
-```{r, fig.align = "center"}
-plot(featureSel_lm, which = 2)
-```
-
-We can observe that the distribution has "fat" tails - both the ends of the Q-Q plot deviate from the straight line and its center follows a straight line. We refer to this as positive kurtosis (a measure of “tailedness”).
+The histogram of the residuals shows a pattern that closely resembles a normal distribution. However, it is still necessary to perform statistical tests to confirm the assumption of normality of the residuals.
 
 **Addressing heteroskedasticity**
 
@@ -1940,16 +1942,14 @@ colnames(df_metrics) <- c("Model_name", "AIC", "McFaddens_R2", "Accuracy", "Prec
 
 ### **Logistic regression**
 
-Logistic regression is a widely adopted classification algorithm that serves as a common choice when dealing with linearly separable data. Considering this, we have opted to begin by training our model using logistic regression. To ensure a more reliable evaluation of the model's performance, we will employ 5-fold cross-validation, which allows for a more comprehensive assessment. By incorporating this technique, we aim to obtain more accurate estimations and insights regarding the model's effectiveness.
+Logistic regression is a widely adopted classification algorithm that serves as a common choice when dealing with linearly separable data. Considering this, we have opted to begin the classification part using this technique.
 
 #### **Unbalanced dataset**
 
 ```{r}
-glm_model <- train(form = Pension_Status ~ .,
-                   data = df_train,
-                   trControl = ctrl,
-                   method = "glm",
-                   family = "binomial")
+glm_model <- glm(Pension_Status ~ .,
+                 data = df_train,
+                 family = "binomial")
 summary(glm_model)
 ```
 Some predictor variables, such as Adult.Mortality", "percentage.expenditure" and "HIV.AIDS", have statistically significant coefficients (p < 0.05), suggesting a significant association with the likelihood of life expectancy being above or below the threshold. Other predictor variables, such as "GDP" and "Population", do not show statistically significant associations (p > 0.05).
@@ -1960,17 +1960,18 @@ Model_name <- "Logistic regression"
 aic <- as.numeric(summary(glm_model)$aic)
 mcfaddens_r2 <- as.numeric(with(summary(glm_model), 1 - deviance/null.deviance))
 
-glm_predictions <- predict(glm_model, df_test) 
-cm <- confusionMatrix(data=glm_predictions, reference = df_test$Pension_Status)
+predicted_probs <- predict(glm_model, newdata = df_test, type = "response")
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 
 accuracy <- as.numeric(cm$overal['Accuracy'])
 precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-glm_probs <- predict(glm_model, newdata = df_test, type = "prob")
-glm_pr_curve <- pr.curve(scores.class0 = glm_probs$Above, scores.class1 = glm_probs$Below, curve=T)
-pr_auc <- as.numeric(glm_pr_curve$auc.integral)
+class0_indices = which(df_test$Pension_Status == "Below")
+pr_curve_glm <- pr.curve(scores.class0 = predicted_probs[class0_indices], scores.class1 = predicted_probs[-class0_indices], curve=TRUE, max.compute = T, min.compute = T, rand.compute = T)
+pr_auc <- as.numeric(pr_curve_glm$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -1982,6 +1983,7 @@ new_row <- data.frame(Model_name = Model_name,
                       PR_AUC = pr_auc)
 
 df_metrics <- rbind(df_metrics, new_row)
+fourfoldplot(cm$table, color = c("2", "5"), conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
 
 Next, we will proceed with creating a new model that incorporates only the predictors that have been found to be statistically significant. By including only these significant predictors, we aim to simplify the model, making it more interpretable and achieving a higher level of parsimony.
@@ -1995,11 +1997,10 @@ significant_features <- c("Adult.Mortality", "percentage.expenditure", "Measles"
 df_train_subset_glm <- df_train[, c("Pension_Status", significant_features)]
 df_test_subset_glm <- df_test[, c("Pension_Status", significant_features)]
 
-glm_reduced_model <- train(form = Pension_Status ~ .,
-                           data = df_train_subset_glm,
-                           trControl = ctrl,
-                           method = "glm",
-                           family = "binomial")
+glm_reduced_model <- glm(Pension_Status ~ .,
+                         data = df_train_subset_glm,
+                         family = "binomial")
+
 summary(glm_reduced_model)
 ```
 
@@ -2008,14 +2009,14 @@ We can see that AIC increased from 929.45 to 930.9. Usually, when comparing two 
 Next we employ the ANOVA to test whether reducing the set of features improves the results and we compare the two models. Anova test in this case compares the deviances of the two models to assess whether the addition of additional predictor variables significantly improves the fit of the model. The test is performed by comparing the difference in deviance between the two models to a chi-square distribution.
 
 ```{r}
-anova(glm_model$finalModel, glm_reduced_model$finalModel, test="Chisq")
+anova(glm_model, glm_reduced_model, test="Chisq")
 ```
 
 <br>
 
-The p-value indicates the statistical significance of the deviance difference. In this case, the p-value is less than the conventional significance level of 0.05, suggesting that there is a significant difference between the two models. Based on this analysis, we can conclude that Model 1, which includes additional predictors compared to Model 2, provides a significantly better fit to the data. The specific predictors included in Model 1 are: StatusDeveloping, infant.deaths, Alcohol, Hepatitis.B, under.five.deaths, GDP, Population, thinness.10.19.years.
+The p-value indicates the statistical significance of the deviance difference. In this case, the p-value 0.02577 is less than the conventional significance level of 0.05, suggesting that there is a significant difference between the two models. Based on this analysis, we can conclude that Model 1, which includes additional predictors compared to Model 2, provides a better fit to the data. The specific predictors included in Model 1 are: StatusDeveloping, infant.deaths, Alcohol, Hepatitis.B, under.five.deaths, GDP, Population, thinness.10.19.years.
 
-Therefore, we have decided to proceed with the full model. As a future work, more sophisticated feature selection methods shall be explored. However, that was not one of the goals of this project.
+Therefore, we have decided to proceed with the full model. ***As a future work, more sophisticated feature selection methods shall be explored.*** However, that was not one of the goals of this project.
 
 #### **Balanced dataset**
 
@@ -2032,11 +2033,9 @@ table(rose_balanced_data$Pension_Status)
 After balancing the dataset, we can observe that the number of examples in each class is now more or less the same. This balanced distribution ensures that each class is adequately represented in the training process.
 
 ```{r}
-glm_rose_model = train(form = Pension_Status ~ .,
-                       data = rose_balanced_data,
-                       trControl = ctrl,
-                       method = "glm",
-                       family = "binomial")
+glm_rose_model = glm(Pension_Status ~ .,
+                     data = rose_balanced_data,
+                     family = "binomial")
 summary(glm_rose_model)
 ```
 
@@ -2046,18 +2045,20 @@ Model_name <- "Logistic regression - ROSE"
 aic <- as.numeric(summary(glm_rose_model)$aic)
 mcfaddens_r2 <- as.numeric(with(summary(glm_rose_model), 1 - deviance/null.deviance))
 
-
-predictions <- predict(glm_rose_model, df_test)
-cm <- confusionMatrix(data=predictions, reference = df_test$Pension_Status)
+predicted_probs <- predict(glm_rose_model, newdata = df_test, type = "response")
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 
 accuracy <- as.numeric(cm$overal['Accuracy'])
 precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-pred_probs <- predict(glm_rose_model, newdata = df_test, type = "prob")
-rose_glm_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
-pr_auc <- as.numeric(rose_glm_pr_curve$auc.integral)
+glm_probs <- predict(glm_model, newdata = df_test, type = "response")
+class0_indices = which(df_test$Pension_Status == "Below")
+
+pr_curve_glm_rose <- pr.curve(scores.class0 = predicted_probs[class0_indices], scores.class1 = predicted_probs[-class0_indices], curve=TRUE, max.compute = T, min.compute = T, rand.compute = T)
+pr_auc <- as.numeric(pr_curve_glm_rose$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2082,12 +2083,9 @@ table(balanced_data_ovun$Pension_Status)
 We have achieved an almost ideal distribution of 0.506 : 0.494.
 
 ```{r}
-glm_ovun_model = train(form = Pension_Status ~ .,
-                       data = balanced_data_ovun,
-                       trControl = ctrl,
-                       method = "glm",
-                       family = "binomial"
-                       )
+glm_ovun_model = glm(Pension_Status ~ .,
+                     data = balanced_data_ovun,
+                     family = "binomial")
 summary(glm_ovun_model)
 ```
 
@@ -2097,17 +2095,18 @@ Model_name <- "Logistic regression - Ovun"
 aic <- as.numeric(summary(glm_ovun_model)$aic)
 mcfaddens_r2 <- as.numeric(with(summary(glm_ovun_model), 1 - deviance/null.deviance))
 
-predictions_ovun <- predict(glm_ovun_model, df_test)
-cm <- confusionMatrix(data=predictions_ovun, reference = df_test$Pension_Status)
+predicted_probs <- predict(glm_ovun_model, newdata = df_test, type = "response")
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 
 accuracy <- as.numeric(cm$overal['Accuracy'])
 precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-pred_probs <- predict(glm_ovun_model, newdata = df_test, type = "prob")
-ovun_glm_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
-pr_auc <- as.numeric(ovun_glm_pr_curve$auc.integral)
+class0_indices = which(df_test$Pension_Status == "Below")
+pr_curve_glm_ovun <- pr.curve(scores.class0 = predicted_probs[class0_indices], scores.class1 = predicted_probs[-class0_indices], curve=TRUE, max.compute = T, min.compute = T, rand.compute = T)
+pr_auc <- as.numeric(pr_curve_glm_ovun$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       AIC = aic,
@@ -2132,34 +2131,36 @@ kable(rounded_df, format = "markdown", row.names = FALSE)
 ```
 
 ```{r, fig.align = "center"}
-plot(glm_pr_curve, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0.5, 1))
-plot(rose_glm_pr_curve, add = TRUE, color = 3)
-plot(ovun_glm_pr_curve, add = TRUE, color = 4)
+plot(pr_curve_glm, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0, 1))
+plot(pr_curve_glm_rose, add = TRUE, color = 3)
+plot(pr_curve_glm_ovun, add = TRUE, color = 4)
 
 legend_text <- c(
-  paste0("LR Unbalanced (AUC = ", round(glm_pr_curve$auc.integral, 3), ")"),
-  paste0("LR ROSE (AUC = ", round(rose_glm_pr_curve$auc.integral, 3), ")"),
-  paste0("LR Ovun (AUC = ", round(ovun_glm_pr_curve$auc.integral, 3), ")")
+  paste0("LR Unbalanced (AUC = ", round(pr_curve_glm$auc.integral, 3), ")"),
+  paste0("LR ROSE (AUC = ", round(pr_curve_glm_rose$auc.integral, 3), ")"),
+  paste0("LR Ovun (AUC = ", round(pr_curve_glm_ovun$auc.integral, 3), ")")
 )
 
-legend("topright", legend = legend_text, col = c(2, 3, 4), lty = 1, lwd = 2, bty = "n", cex = 0.8)
+legend("bottomright", legend = legend_text, col = c(2, 3, 4), lty = 1, lwd = 2, bty = "n", cex = 0.8)
 ```
 
-After evaluating the models, we found that they have comparable F1 scores. However, when considering the PR AUC value, **the unbalanced model stands out and performs better than the other models**.
+After evaluating the models, we found that they have comparable F1 and PR AUC scores. However, when considering the McFadden's R-squared and AIC values, the model trained on the ovun.sample balanced dataset performs slightly better than the others.
 
-Comparing the Ovun.sample and ROSE approaches, we see that they exhibit similar performance. However, based on the lower AIC value and higher McFadden's R2, we would prefer the Ovun.sample approach over the ROSE approach.
-
-Let's visualize the confusion matrix of the logistic regression model trained on the unbalanced dataset:
+Let's visualize the confusion matrix of the logistic regression model trained on the ovun.sample balanced dataset as it performed the best:
 
 ```{r, fig.align = "center"}
-glm_predictions <- predict(glm_model, df_test)
-cm <- confusionMatrix(data=glm_predictions, reference = df_test$Pension_Status)
+predicted_probs <- predict(glm_ovun_model, newdata = df_test, type = "response")
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 fourfoldplot(cm$table, color = c("2", "5"), conf.level = 0, margin = 1, main = "Confusion Matrix")
 ```
-We will now proceed with testing other classification algorithms while retaining the Logistic Regression model trained on an unbalanced dataset for comparison.
+
+We will now proceed with testing other classification algorithms while retaining the Logistic Regression model trained on an balanced dataset for comparison.
 
 ```{r}
-df_metrics <- df_metrics[df_metrics$Model_name == "Logistic regression", ]
+df_metrics <- df_metrics[df_metrics$Model_name == "Logistic regression - Ovun", ]
+df_metrics[df_metrics$Model_name == "Logistic regression - Ovun", "Model_name"] <- "Logistic regression"
+
 
 # Remove the columns "AIC" and "McFaddens_R2"
 df_metrics <- df_metrics[, !(names(df_metrics) %in% c("AIC", "McFaddens_R2"))]
@@ -2167,11 +2168,11 @@ df_metrics <- df_metrics[, !(names(df_metrics) %in% c("AIC", "McFaddens_R2"))]
 
 ### **Naive Bayes**
 
-Next, we will compare our Logistic regression model with a Naive Bayes classifier. We will use the unbalanced data for the Naive Bayes classifier since it has shown good performance with Logistic regression.
+Next, we will compare our Logistic regression model with a Naive Bayes classifier. We will use the ovun.sample balanced data for the Naive Bayes classifier since it has shown good performance with Logistic regression.
 
 ```{r, fig.align = "center"}
 set.seed(123)
-nb_model <- naiveBayes(Pension_Status ~ ., data = df_train)
+nb_model <- naiveBayes(Pension_Status ~ ., data = balanced_data_ovun)
 
 # Confusion Matrix
 nb_pred <- predict(nb_model, newdata = df_test)
@@ -2184,16 +2185,18 @@ The results from the confusion matrix look decent.
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "Naive Bayes"
 
-cm <- confusionMatrix(data = nb_pred, reference = df_test$Pension_Status)
+predicted_probs <- predict(nb_model, newdata = df_test, type = "raw")
+predicted_probs <- predicted_probs[, "Below"]
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 
 accuracy <- as.numeric(cm$overal['Accuracy'])
 precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-nb_pred_probs <- predict(nb_model, newdata = df_test, type = "raw")
-nb_pr_curve <- pr.curve(scores.class0 = nb_pred_probs[, "Above"], scores.class1 = nb_pred_probs[, "Below"], curve=T)
-pr_auc <- as.numeric(nb_pr_curve$auc.integral)
+pr_curve_nb <- pr.curve(scores.class0 = predicted_probs[class0_indices], scores.class1 = predicted_probs[-class0_indices], curve=TRUE, max.compute = T, min.compute = T, rand.compute = T)
+pr_auc <- as.numeric(pr_curve_nb$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
@@ -2207,35 +2210,35 @@ df_metrics <- rbind(df_metrics, new_row)
  
 AIC and McFadden's R2 are metrics that are calculated based on the likelihood of the model. Because Naive Bayes does not have a likelihood function, these metrics cannot be calculated for it. This is because the likelihood function is used to measure how well the model fits the data, and Naive Bayes does not have a way to measure this.
 
-We also evaluated the performance of Naive Bayes using training subsets created using the ROSE and Ovun techniques, in comparison to the model trained on the unbalanced dataset. However, no improvement was observed.
+We also evaluated the performance of Naive Bayes using the unbalanced dataset. Similarly as before, the balancing technique improved the performance of the Naive Bayes model as well.
 
 ### **Linear Discriminant Analysis**
 
 Now, let's explore a different supervised classification technique called Linear Discriminant Analysis (LDA). This classifier utilizes the Bayes theorem to make accurate classifications.
 
 ```{r, warning=FALSE}
-lda_model = train(form = Pension_Status ~ .,
-                  data = df_train,
-                  trControl = ctrl,
-                  method = "lda")
+lda_model = lda(Pension_Status ~ .,
+                data = balanced_data_ovun)
 lda_model
 ```
+
 ```{r, echo=FALSE, message=FALSE,fig.align = "center"}
 Model_name <- "Linear Discriminant Analysis"
 
 lda_pred <- predict(lda_model, newdata = df_test)
-cm <- confusionMatrix(data = lda_pred, reference = df_test$Pension_Status)
+predicted_probs <- predict(lda_model, newdata = df_test)
+predicted_probs <- predicted_probs$posterior
+predicted_probs <- predicted_probs[, "Below"]
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 
 accuracy <- as.numeric(cm$overal['Accuracy'])
 precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-auc_lda <- as.numeric(roc.curve(df_test$Pension_Status, lda_pred)$auc)
-
-pred_probs <- predict(lda_model, newdata = df_test, type = "prob")
-lda_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
-pr_auc <- as.numeric(lda_pr_curve$auc.integral)
+pr_curve_lda <- pr.curve(scores.class0 = predicted_probs[class0_indices], scores.class1 = predicted_probs[-class0_indices], curve=TRUE, max.compute = T, min.compute = T, rand.compute = T)
+pr_auc <- as.numeric(pr_curve_lda$auc.integral)
 
 new_row <- data.frame(Model_name = "Linear Discriminant Analysis",
                       Accuracy = accuracy,
@@ -2247,37 +2250,35 @@ new_row <- data.frame(Model_name = "Linear Discriminant Analysis",
 df_metrics <- rbind(df_metrics, new_row)
 ``` 
 
-We also assessed the performance of LDA using the synthetic training dataset. However, similar to previous experiments, the results did not show any improvement. Consequently, we have decided not to retain those results for further analysis.
+We also assessed the performance of LDA using the unbalanced training dataset. The results were again better using the balanced dataset.
 
 ### **Quadratic discriminant analysis**
 
 For the sake of completeness, we will also employ quadratic discriminant analysis to train the classification model.
 
 ```{r}
-set.seed(123)
-qda_model = train(form = Pension_Status ~ . - Status,
-                  data = df_train,
-                  trControl = ctrl,
-                  method = "qda")
+qda_model = qda(Pension_Status ~ . - Status,
+                data = balanced_data_ovun)
 qda_model
 ```
 
 ```{r, echo=FALSE, message=FALSE}
 Model_name <- "Quadratic Discriminant Analysis"
 
-qda_pred <- predict(qda_model, newdata = df_test)
-cm <- confusionMatrix(data = qda_pred, reference = df_test$Pension_Status)
+predicted_probs <- predict(qda_model, newdata = df_test)
+predicted_probs <- predicted_probs$posterior
+predicted_probs <- predicted_probs[, "Below"]
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 
 accuracy <- as.numeric(cm$overal['Accuracy'])
 precision <- as.numeric(cm$byClass["Precision"])
 recall <- as.numeric(cm$byClass["Recall"])
 f1_score <- as.numeric(cm$byClass["F1"])
 
-pred_probs <- predict(qda_model, newdata = df_test, type = "prob")
-qda_pr_curve <- pr.curve(scores.class0 = pred_probs$Above, scores.class1 = pred_probs$Below, curve=T)
-pr_auc <- as.numeric(qda_pr_curve$auc.integral)
+pr_curve_qda <- pr.curve(scores.class0 = predicted_probs[class0_indices], scores.class1 = predicted_probs[-class0_indices], curve=TRUE, max.compute = T, min.compute = T, rand.compute = T)
+pr_auc <- as.numeric(pr_curve_qda$auc.integral)
 
-# Add new row to the df_metrics dataframe
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
                       Precision = precision,
@@ -2297,10 +2298,10 @@ Possible problem: Two predictor variables are perfectly correlated.
 Let's analyze this issue.
 
 ```{r, fig.align = "center"}
-cont_table <- table(df_train$Status, df_train$Pension_Status)
+cont_table <- table(balanced_data_ovun$Status, balanced_data_ovun$Pension_Status)
 chi_test <- chisq.test(cont_table)
 print(chi_test)
-ggplot(df_train, aes(x = Status, fill = Pension_Status)) +  geom_bar(alpha = 0.8)
+ggplot(balanced_data_ovun, aes(x = Status, fill = Pension_Status)) +  geom_bar(alpha = 0.8)
 ```
 
 ### **k-NN**
@@ -2310,10 +2311,10 @@ To conclude the classification part, we will utilize a non-parametric classifier
 ```{r}
 numeric_cols <- names(df_test)[sapply(df_test, is.numeric)]
 
-df_train[, numeric_cols] <- scale(df_train[, numeric_cols])
+balanced_data_ovun[, numeric_cols] <- scale(balanced_data_ovun[, numeric_cols])
 df_test[, numeric_cols] <- scale(df_test[, numeric_cols])
 
-df_train$Status <- as.numeric(df_train$Status)
+balanced_data_ovun$Status <- as.numeric(balanced_data_ovun$Status)
 df_test$Status <- as.numeric(df_test$Status)
 ```
 
@@ -2325,7 +2326,7 @@ set.seed(123)
 ctrl <- trainControl(method = "cv", number = 5, summaryFunction = prSummary, classProbs = TRUE)
 
 # Perform cross-validation to select the best k
-k_values <- seq(3, sqrt(nrow(df_train)), by = 2)
+k_values <- seq(3, sqrt(nrow(balanced_data_ovun)), by = 2)
 f1_scores <- numeric(length(k_values))
 
 for (i in seq_along(k_values)) {
@@ -2333,8 +2334,8 @@ for (i in seq_along(k_values)) {
   
   # Train the model using cross-validation
   knn_model <- train(
-    x = df_train[, -ncol(df_train)],
-    y = df_train$Pension_Status,
+    x = balanced_data_ovun[, -ncol(balanced_data_ovun)],
+    y = balanced_data_ovun$Pension_Status,
     method = "knn",
     trControl = ctrl,
     tuneGrid = data.frame(k = k),
@@ -2361,14 +2362,18 @@ Model_name <- "K-Nearest Neighbors"
 final_knn_pred <- predict(final_model, newdata = df_test[, -ncol(df_test)], type="class")
 cm_knn <- confusionMatrix(data=final_knn_pred, reference = df_test$Pension_Status)
 
-accuracy <- as.numeric(cm_knn$overall["Accuracy"])
-precision <- as.numeric(cm_knn$byClass["Precision"])
-recall <- as.numeric(cm_knn$byClass["Recall"])
-f1_score <- as.numeric(cm_knn$byClass["F1"])
+predicted_probs <- predict(final_model, newdata = df_test[, -ncol(df_test)], type = "prob")
+predicted_probs <- predicted_probs[, "Below"]
+predicted_classes <- ifelse(predicted_probs >= 0.5, "Below", "Above")
+cm <- confusionMatrix(data=as.factor(predicted_classes), reference = df_test$Pension_Status)
 
-knn_pred_probs <- predict(final_model, newdata = df_test[, -ncol(df_test)], type="prob")
-knn_pr_curve <- pr.curve(scores.class0 = knn_pred_probs[,"Above"], scores.class1 = knn_pred_probs[,"Below"], curve=T)
-pr_auc <- as.numeric(knn_pr_curve$auc.integral)
+accuracy <- as.numeric(cm$overall["Accuracy"])
+precision <- as.numeric(cm$byClass["Precision"])
+recall <- as.numeric(cm$byClass["Recall"])
+f1_score <- as.numeric(cm$byClass["F1"])
+
+pr_curve_knn <- pr.curve(scores.class0 = predicted_probs[class0_indices], scores.class1 = predicted_probs[-class0_indices], curve=TRUE, max.compute = T, min.compute = T, rand.compute = T)
+pr_auc <- as.numeric(pr_curve_knn$auc.integral)
 
 new_row <- data.frame(Model_name = Model_name,
                       Accuracy = accuracy,
@@ -2380,40 +2385,40 @@ new_row <- data.frame(Model_name = Model_name,
 df_metrics <- rbind(df_metrics, new_row)
 ```
 
-After evaluating the results obtained from training various classifiers, it was observed that the synthetic balancing of the training dataset using two different techniques did not lead to a significant improvement in performance for the tested models. As a result, these models were not included in our final analysis.
+After evaluating the results obtained from training various classifiers, it was observed that the synthetic balancing of the training dataset using the ovun. sample package contributed to a slight improvement in the performances of most of the classifiers. Therefore, to ensure a fair comparison, we only considered the models trained on the balanced dataset.
 
 ```{r}
 # Sort the dataframe based on F1_score and PR_AUC columns
-sorted_df <- df_metrics[order(-df_metrics$PR_AUC, -df_metrics$F1_score), ]
+sorted_df <- df_metrics[order(-df_metrics$F1_score, -df_metrics$PR_AUC), ]
 rounded_df <- sorted_df
 rounded_df[, -1] <- round(rounded_df[, -1], 3)
 kable(rounded_df, format = "markdown", row.names = FALSE)
 ```
 
 ```{r, echo=FALSE, fig.align = "center"}
-plot(glm_pr_curve, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0.0, 1))
-plot(nb_pr_curve, add = TRUE, color = 3)
-plot(lda_pr_curve, add = TRUE, color = 4)
-plot(qda_pr_curve, add = TRUE, color = 5)
-plot(knn_pr_curve, add = TRUE, color = 6)
+plot(pr_curve_glm, max.plot = TRUE, min.plot = TRUE, rand.plot = TRUE, fill.area = TRUE, color = 2, auc.main = FALSE, ylim = c(0.0, 1))
+plot(pr_curve_nb, add = TRUE, color = 3)
+plot(pr_curve_lda, add = TRUE, color = 4)
+plot(pr_curve_qda, add = TRUE, color = 5)
+plot(pr_curve_knn, add = TRUE, color = 6)
 
 legend_text <- c(
-  paste0("LR (AUC = ", round(glm_pr_curve$auc.integral, 3), ")"),
-  paste0("NB (AUC = ", round(nb_pr_curve$auc.integral, 3), ")"),
-  paste0("LDA (AUC = ", round(lda_pr_curve$auc.integral, 3), ")"),
-  paste0("QDA (AUC = ", round(qda_pr_curve$auc.integral, 3), ")"),
-  paste0("KNN (AUC = ", round(knn_pr_curve$auc.integral, 3), ")")
+  paste0("LR (AUC = ", round(pr_curve_glm$auc.integral, 3), ")"),
+  paste0("NB (AUC = ", round(pr_curve_nb$auc.integral, 3), ")"),
+  paste0("LDA (AUC = ", round(pr_curve_lda$auc.integral, 3), ")"),
+  paste0("QDA (AUC = ", round(pr_curve_qda$auc.integral, 3), ")"),
+  paste0("KNN (AUC = ", round(pr_curve_knn$auc.integral, 3), ")")
 )
 
-legend("topright", legend = legend_text, col = c(2, 3, 4), lty = 1, lwd = 2, bty = "n", cex = 0.8)
+legend("bottomright", legend = legend_text, col = c(2, 3, 4, 5, 6), lty = 1, lwd = 2, bty = "n", cex = 0.8)
 ```
 
-In our final analysis, we have chosen to prioritize the PR_AUC and F1 score as most significant metrics, especially for evaluating models with unbalanced datasets. Taking into account the values of these two metrics, we have identified the top-performing models as follows:
+In our final analysis, we have chosen to prioritize the F1 score and PR_AUC as most significant metrics, especially for evaluating models with unbalanced datasets. Taking into account the values of these two metrics, we have identified the top-performing models as follows:
 
 1. Logistic Regression
 2. Linear Discriminant Analysis
 3. K-Nearest Neighbors
 
-To determine the overall winner, it is important to carefully assess the strengths of each model in comparison to the others. The Logistic Regression model displays superior performance in terms of both F1 score and PR AUC. This model exhibits good precision, recall, and accuracy, while effectively balancing false positives and false negatives. Moreover, the Logistic Regression model offers the added advantage of being relatively straightforward to interpret, which can be valuable in certain scenarios.
+To determine the overall winner, it is important to carefully assess the strengths of each model in comparison to the others. The Logistic Regression model displays superior performance in terms of combined F1 score and PR AUC. This model exhibits good precision, recall, and accuracy, while effectively balancing false positives and false negatives. Moreover, the Logistic Regression model offers the added advantage of being relatively straightforward to interpret, which can be valuable in certain scenarios.
 
 > In conclusion, considering the emphasis on F1 score and PR AUC, the Logistic Regression model emerges as the potential winner due to its robust performance across multiple metrics. It not only achieves high predictive accuracy but also provides interpretability, making it an apt choice for our analysis.
