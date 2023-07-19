@@ -1110,6 +1110,11 @@ plot_grid(title,p, ncol=1)
 
 ### **Constructing Correlation Matrix**
 
+We can get a comprehensive view of the relationships between multiple variables by calculating pairwise correlations between them. Our heat correlation map is a visual representation of a correlation matrix that uses color gradients to display the strength and direction of relationships between variables. It provides a concise and intuitive way to identify patterns and assess the strength of correlations.
+
+The Darker shades of blue indicate of stronger correlation between variables and on the contrary the lighter shades indicate weaker bonds.
+
+
 ```{r, fig.align = "center"}
 # Compute the correlation matrix
 numeric_vars <- LifeExp[, sapply(LifeExp, is.numeric)]
@@ -1125,8 +1130,10 @@ corrplot::corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.7, c
 ```{r, fig.align = "center"}
 cor_matrix %>% corrr::network_plot(min_cor = .3)
 ```
+In order to also maybe closely visualize the connection and direction of our variables we constructed a Network plot.
+From this plot we can make some conclusions but because there are a lot of variables included in the network plot visualization, it is not intuitive, therefore we decided to also make a star graph with the target variable Life.expectancy that will also be useful later for Linear Regression.
 
-Because there are a lot of variables included in the network plot visualization it is not intuitive for making some conclusions, therefore we decided to also make a star graph with the target variable Life.expectancy that will also be useful later for Linear Regression.
+We can see that the bolder lines connecting the Life Expectancy Variable with the other Independent Variables indicate stronger bonds, as well as the size of the circles. 
 
 #### **Star Graph**
 
@@ -1790,6 +1797,10 @@ featureSel_lm <- lm(train[,Y_colname] ~ ., data = train[, X_colnames_reduced_fea
 summary(featureSel_lm)
 ```
 
+<br>
+
+#### Interpretation - Linear Regression
+
 Finally, let's interpret the results achieved by the best model.
 
 The model's performance is indicated by the multiple R-squared value of 0.8352, which means that approximately 83.52% of the variance in the response variable can be explained by the predictors in the model. The adjusted R-squared value, which accounts for the number of predictors in the model, is 0.8345.
@@ -2385,6 +2396,11 @@ new_row <- data.frame(Model_name = Model_name,
 
 df_metrics <- rbind(df_metrics, new_row)
 ```
+
+<br>
+
+#### Interpretation - Classification
+
 
 After evaluating the results obtained from training various classifiers, it was observed that the synthetic balancing of the training dataset using the ovun. sample package contributed to a slight improvement in the performances of most of the classifiers. Therefore, to ensure a fair comparison, we only considered the models trained on the balanced dataset.
 
