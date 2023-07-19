@@ -560,7 +560,8 @@ outlier_counts <- sapply(LifeExp[cont_vars], function(x) {
 outlier_percent <- outlier_counts / nrow(LifeExp) * 100
 
 outliers_df <- data.frame(OutlierCount = outlier_counts, OutlierPercent = outlier_percent)
-kable(outliers_df, format = "markdown")
+
+kable(outliers_df[order(outliers_df$OutlierPercent, decreasing=TRUE), ], format = "markdown")
 ```
 
 There seem to be a considerable number of outliers present in this dataset. Now that they have been identified, a question arises: What course of action should be taken regarding them?
@@ -1132,18 +1133,12 @@ Because there are a lot of variables included in the network plot visualization 
 
 ```{r, fig.align = "center"}
 # Subset the relevant variables for the star graph
-numeric_vars_1 <- numeric_vars[, c("Life.expectancy", "infant.deaths", "Alcohol",
-                            "percentage.expenditure", "Hepatitis.B", "Measles",
-                            "under.five.deaths", "Polio", "Total.expenditure",
-                            "Diphtheria", "GDP", "Population",
-                            "thinness.10.19.years", "thinness.5.9.years",
-                            "Income.composition.of.resources", "Schooling")]
 
-cor_matrix_1 <- cor(numeric_vars_1, use = "pairwise.complete.obs")
+cor_matrix_1 <- cor(numeric_vars, use = "pairwise.complete.obs")
 cor_values <- cor_matrix_1[1, -1]
 
 graph <- graph.star(n = length(cor_values) + 1, mode = "undirected")
-V(graph)$name <- colnames(numeric_vars_1)
+V(graph)$name <- colnames(numeric_vars)
 V(graph)$size <- c(5, 10 + 40 * abs(cor_values))
 E(graph)$width <- abs(cor_values) * 5
 layout <- layout.star(graph)
@@ -1164,7 +1159,7 @@ plot(graph, layout = layout, edge.arrow.size = 0.5, vertex.size = V(graph)$size,
 
 After completing the data cleaning process and exploring and engineering features, we can now move on to the main phase of this project: making predictions using linear regression. Initially, we will examine the effectiveness of a **simple linear regressor** (using only one feature). Then, we will progress to employing all the features through **multiple linear regression** or selecting a subset of features using appropriate techniques for **feature selection**.
 
-Based on the exploratory data analysis (EDA), it is evident that our target variable, "Life expectancy," demonstrates the highest correlation with "Adult mortality." However, upon examining the scatter plot, it appears that this variable may not be suitable for linear regression. Therefore, we proceed by choosing the second most correlated variable, namely "Income.composition.of.resources". By observing the scatter plot for this particular variable, we can notice a linear trend.
+Based on the exploratory data analysis (EDA), it is evident that our target variable, "Life expectancy," demonstrates very high correlation with "Adult mortality." However, upon examining the scatter plot, it appears that this variable may not be suitable for linear regression. Therefore, we proceed by choosing the another variable, namely "Income.composition.of.resources", which  is actually the most correlated with our target variable. By observing the scatter plot for this particular variable, we can notice a linear trend.
 
 Before we start, the question of whether to perform feature scaling arises. Feature scaling is not an absolute necessity for linear regression. The algorithm calculates the coefficients for each feature by computing the differences between the feature values and their mean. Therefore, feature scaling does not have a direct impact on the coefficients obtained from the linear regression model.
 
@@ -1642,7 +1637,7 @@ For the Ridge regression, it is necessary to standardize data.
 
 ```{r}
 prepare_ridge_lasso <- function(X, Y, alpha){
-  #grid <- 10^seq(10, -2, length=100)
+  grid <- 10^seq(10, -2, length=100)
 
   model <- glmnet(X, Y, alpha = alpha, standardize = T)
   # alpha = 0 for Ridge Regression
@@ -1665,7 +1660,7 @@ prepare_ridge_lasso <- function(X, Y, alpha){
 
 ```{r, warning=FALSE, fig.align = "center"}
 train$Status  <- as.numeric(train$Status) - 1
-X = as.matrix(train[, X_colnames_reduced_featureSel])
+X = as.matrix(train[, X_colnames])
 Y = as.matrix(train[, Y_colname])
 
 ridge_res = prepare_ridge_lasso(X = X,
@@ -1681,7 +1676,7 @@ test$Status  <- as.numeric(test$Status) - 1
 
 ridge_pred <- predict(ridge_model,
                       s = ridge_lambda,
-                      newx = as.matrix(test[, X_colnames_reduced_featureSel]))
+                      newx = as.matrix(test[, X_colnames]))
 
 ridge_mse <- mean((ridge_pred - test$Life.expectancy)^2)
 
@@ -1689,7 +1684,7 @@ ridge_mse
 ```
 
 The value of best lambda is equal to 0.7771478 
-MSE with the best lambda: 13.29373
+MSE with the best lambda: 11.32536
 
 ```{r, echo=FALSE}
 residuals <- test$Life.expectancy - ridge_pred
@@ -1728,14 +1723,15 @@ lasso_model <- lasso_res$model
 lasso_lambda <- lasso_res$lambda
 lasso_pred <- predict(lasso_model,
                       s = lasso_lambda,
-                      newx = as.matrix(test[, X_colnames_reduced_featureSel]))
+                      newx = as.matrix(test[, X_colnames]))
 lasso_mse <- mean((lasso_pred - test$Life.expectancy)^2)
 lasso_mse
 ```
-The value of best lambda is equal to: 0.02213345
-MSE with the best lambda: 13.44903
 
-We can see that the value of MSE of the lasso model is better than the ridge regularization model. So, we can conclude that the model with the L1 regularization term has slightly better predicting capabilities.
+The value of best lambda is equal to: 0.01390045
+MSE with the best lambda: 11.58511
+
+We can see that the value of MSE of the lasso model is slightly worse than the ridge regularization model. So, we can conclude that the model with the L2 regularization term has slightly better predicting capabilities.
 
 ```{r, echo=FALSE}
 best_model <- glmnet(X, Y, alpha = 1, lambda = lasso_lambda)
